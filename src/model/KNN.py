@@ -20,3 +20,14 @@ class KNN:
         k_indices = np.argsort(distances)[:self.k]
         k_labels = self.y_train[k_indices]
         return Counter(k_labels).most_common(1)[0][0]
+
+# Ventana Deslizante
+    def predict_with_distance(self, x):
+        x = np.array(x)
+        distances = np.sqrt(np.sum((self.X_train - x)**2, axis=1))
+        k_indices = np.argsort(distances)[:self.k]
+        k_labels = self.y_train[k_indices]
+        k_distances = distances[k_indices]
+        label = Counter(k_labels).most_common(1)[0][0]
+        mean_dist = np.mean(k_distances)
+        return label, mean_dist
