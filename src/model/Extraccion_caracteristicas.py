@@ -172,7 +172,8 @@ class features_extractor:
 
 if __name__ == "__main__":
     
-    image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
+    #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
+    image = cv2.imread("C:\\Users\\alumno\\Pictures\\Camera Roll\\focas\\WIN_20260702_19_07_47_Pro.jpg")
     
     # Imagen se cargó correctamente
     if image is None:

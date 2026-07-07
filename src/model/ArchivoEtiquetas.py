@@ -5,13 +5,22 @@ import pandas as pd
 def crear_archivoEtiquetas(ruta ,imagenes):
 
     datos = []
-    Clases = ["Circulo","Poligonos"]
+    Clases = ["Circulo","Poligonos", "Fondo"]
     
     for clase in Clases:
         for img in os.listdir(ruta):
             if img.endswith(".jpg") or img.endswith(".png"):
                 ruta_img = os.path.join(ruta, img) 
                 img = cv2.imread(ruta_img)
+                
+                # Tamaño imagen color
+                print("img.shape: ", img.shape)
+                
+                # Escala de grises
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                
+                # Tamaño imagen gris
+                print("gray.shape: ", gray.shape)
                 #Agregar Caracteristicas de la imagen para guardarlas en el archivo de etiquetas
                 #Escala de grisees y tamaño ?
 
