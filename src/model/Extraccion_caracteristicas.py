@@ -73,10 +73,14 @@ class features_extractor:
         hist_s /= (hist_s.sum() + 1e-6)
         hist_v /= (hist_v.sum() + 1e-6)
 
+        medidas= self.largo_ancho(image)
+
         visual_features = np.concatenate([hu_moments, hist_h, hist_s, hist_v])
+        
+        
 
         # Concatenar todo el vector de características
-        final_features = np.concatenate([geom_features, stat_features, visual_features])
+        final_features = np.concatenate([medidas, geom_features, stat_features, visual_features])
         if self.debug:
             self.show_processed_images(original, gray, mask, cnt, image)
         return final_features
@@ -85,6 +89,63 @@ class features_extractor:
         # 5 (geom) + 3 (stat) + 7 (hu) + 3 * hist_bins (color)
         return 5 + 3 + 7 + (3 * self.hist_bins)
     
+    def largo_ancho(self,img):
+    
+        img_original = img.copy()
+
+        # Preprocesamiento (Grises y desenfoque para reducir ruido)
+        gris = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        suave = cv2.GaussianBlur(gris, (5, 5), 0)
+
+        #Detección de Bordes (Canny)
+        bordes = cv2.Canny(suave, 50, 150)
+
+        #Detección de Esquinas (Harris)
+        # Operamos sobre la imagen en gris (debe ser tipo float32)
+        gris_float = np.float32(gris)
+        dest_esquinas = cv2.cornerHarris(gris_float, blockSize=2, ksize=3, k=0.04)
+
+
+        # Dilatamos el resultado para que las esquinas se vean más grandes al dibujar
+        dest_esquinas = cv2.dilate(dest_esquinas, None)
+        # Marcamos las esquinas en la imagen original en color ROJO
+        img[dest_esquinas > 0.01 * dest_esquinas.max()] = [0, 0, 255]
+
+        # Contornos para medir Ancho y Alto
+        contornos, _ = cv2.findContours(bordes, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        for c in contornos:
+            if cv2.contourArea(c) < 100:
+                continue
+                
+            # Obtener el rectángulo delimitador (Bounding Box)
+            x, y, ancho, alto = cv2.boundingRect(c)
+            # (Ancho x Alto) en la imagen en color AZUL
+
+            texto = f"{ancho}x{alto} px"
+
+            cv2.putText(img, texto, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+            
+            if(ancho == 383 and alto == 389):
+                print("Cuadrado")
+                print(x, y, ancho, alto)
+                # Dibujar el rectángulo delimitador en color VERDE
+                cv2.rectangle(img, (x, y), (x + ancho, y + alto), (0, 255, 0), 2)
+            if(ancho == 112 and alto == 109):
+                print("circulo")
+                print(x, y, ancho, alto)
+                cv2.rectangle(img, (x, y), (x + ancho, y + alto), (0, 255, 0), 2)
+
+            if(self.debug):
+                # OpenCV usa BGR, Matplotlib usa RGB; por eso convertimos los colores
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                plt.figure(figsize=(10, 6))
+                plt.imshow(img_rgb)
+                plt.axis('off')  # Oculta los ejes de coordenadas
+                plt.show()
+                
+            vector=[x, y, ancho, alto]
+            return vector
         
     def show_processed_images(self, original, gray, mask, contour, image_bgr):
             """Muestra las imágenes procesadas en diferentes etapas"""
@@ -173,7 +234,7 @@ class features_extractor:
 if __name__ == "__main__":
     
     #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
-    image = cv2.imread("C:\\Users\\alumno\\Pictures\\Camera Roll\\focas\\WIN_20260702_19_07_47_Pro.jpg")
+    image = cv2.imread("P:\IA - JAR\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\dataset\Entrenamiento\Class_2\WIN_20260702_19_23_03_Pro.jpg")
     
     # Imagen se cargó correctamente
     if image is None:
