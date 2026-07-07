@@ -2,6 +2,10 @@ import cv2
 import numpy as np
 from pydobot import Dobot
 
+from camara import sacar_foto
+from Extraccion_caracteristicas import features_extractor
+
+
 LIMITES = {
     'X': {'min': -150, 'max': 150},
     'Y': {'min': -150, 'max': 150},
@@ -36,21 +40,30 @@ def Home():
     device.move_to(HOME_X, HOME_Y, HOME_Z, HOME_R, wait=True)
 
 #mapeo
-def pixeles_a_cm(pix_x, pix_y, factor_escala):
+def pixeles_a_cm(pix_x, pix_y, factor_escala , offsety, offsetx):
     # Convertimos los pixeles de la cámara a coordenadas X e Y del robot
-    x_cm = pix_x * factor_escala
-    y_cm = pix_y * factor_escala
+    x_cm = pix_x * factor_escala + offsetx
+    y_cm = pix_y * factor_escala + offsety
     return x_cm, y_cm
 
 #Cada píxel equivale a ~0.245 = 0.024500 mm
 if __name__ == "__main__":
-    device = Dobot(port="COM12", verbose=True)
-    Home()
-    pose = device.pose()
+    
+    Proceso = features_extractor() # creamos una instacias de la clase
+    
+    rutaimage = sacar_foto("Prueba2") # tomamamos foto y guardamos
+    
+    device = Dobot(port="COM12", verbose=True) # robot
+    Home() # hacemos home
+    pose = device.pose() # posicion actual 
     print(pose)
     
-    base_pos_x, base_pos_y =pixeles_a_cm(1920, 1080,0.244791 )
+    base_pos_x, base_pos_y =pixeles_a_cm(1920, 1080,0.244791, 0, 0)
     
     print(base_pos_x, base_pos_y) #469.99872 264.37428
     
-    device.move_to(469.99872, 264.37428, 50, 0, wait=True)
+    #device.move_to(469.99872, 264.37428, 50, 0, wait=True)
+    
+    vector = Proceso.proceso(rutaimage)
+    
+    

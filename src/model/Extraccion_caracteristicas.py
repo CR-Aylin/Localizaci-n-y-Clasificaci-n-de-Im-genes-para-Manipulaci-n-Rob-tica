@@ -229,8 +229,25 @@ class features_extractor:
             
             plt.tight_layout()
             plt.show()
+            
+            def proceso(Rutaimagen):
+                #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
+                image = cv2.imread(Rutaimagen)
+                
+                # Imagen se cargó correctamente
+                if image is None:
+                    print("No se pudo cargar la imagen. Verifica la ruta.")
+                else:
+                    extractor = features_extractor(hist_bins=16, debug=True)
+                    caracteristicas = extractor.extract(image)
+                    print(f"Características extraídas: {caracteristicas.shape}")
+                    print(f"Vector de características 10 : {caracteristicas[:10]}...")
+                    print(f"Vector de características: {caracteristicas}")
+                    print(f"Tamaño total del vector: {len(caracteristicas)}")
+                
+                return caracteristicas
 
-
+"""
 if __name__ == "__main__":
     
     #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
@@ -247,5 +264,5 @@ if __name__ == "__main__":
         print(f"Vector de características: {caracteristicas}")
         print(f"Tamaño total del vector: {len(caracteristicas)}")
         
-
+"""
 # vector = [Características Geométricas, Características Estadísticas, Momentos de Hu, Histogramas de Color]

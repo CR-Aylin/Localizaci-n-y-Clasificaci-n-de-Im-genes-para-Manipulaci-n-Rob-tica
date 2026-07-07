@@ -9,6 +9,8 @@ import time
 from serial.tools import list_ports
 from pydobot import Dobot
 
+from camara import capturar_imagen
+
 
 def conectar():
     puertos = list(list_ports.comports())
