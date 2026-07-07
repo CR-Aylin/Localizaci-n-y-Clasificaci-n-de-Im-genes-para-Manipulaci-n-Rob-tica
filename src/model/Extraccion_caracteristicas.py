@@ -77,13 +77,15 @@ class features_extractor:
 
         visual_features = np.concatenate([hu_moments, hist_h, hist_s, hist_v])
         
-        
-
         # Concatenar todo el vector de características
-        final_features = np.concatenate([medidas, geom_features, stat_features, visual_features])
+        #final_features = np.concatenate([ geom_features, stat_features, visual_features]) ##################
+        
+        VECTOR = np.concatenate([geom_features, stat_features, visual_features, medidas])
+
+        
         if self.debug:
             self.show_processed_images(original, gray, mask, cnt, image)
-        return final_features
+        return VECTOR #final_features
 
     def get_feature_size(self):
         # 5 (geom) + 3 (stat) + 7 (hu) + 3 * hist_bins (color)
@@ -144,7 +146,8 @@ class features_extractor:
                 plt.axis('off')  # Oculta los ejes de coordenadas
                 plt.show()
                 
-            vector=[x, y, ancho, alto]
+            vector =[x, y, ancho, alto]
+            
             return vector
         
     def show_processed_images(self, original, gray, mask, contour, image_bgr):
@@ -247,7 +250,7 @@ class features_extractor:
                 
                 return caracteristicas
 
-"""
+
 if __name__ == "__main__":
     
     #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
@@ -260,9 +263,39 @@ if __name__ == "__main__":
         extractor = features_extractor(hist_bins=16, debug=True)
         caracteristicas = extractor.extract(image)
         print(f"Características extraídas: {caracteristicas.shape}")
+        print(f"Vector de características MEDIDAS : {caracteristicas[0]}...")
         print(f"Vector de características 10 : {caracteristicas[:10]}...")
         print(f"Vector de características: {caracteristicas}")
         print(f"Tamaño total del vector: {len(caracteristicas)}")
         
-"""
+        # Imprimir el contenido del vector desglosado por su tipo de característica
+        print(f"\nCaracterísticas extraídas (Dimensiones): {caracteristicas.shape}")
+        print(f"Tamaño total del vector: {len(caracteristicas)}")
+        
+        print("\n=== DESGLOSE DEL VECTOR DE CARACTERÍSTICAS ===")
+        
+        # 1. Características Geométricas (Primeros 5 elementos)
+        print(f"Características Geométricas {caracteristicas[:5].shape}:")
+        print(f"  [Área, Perímetro, Circularidad, Compacidad, Relación de Aspecto] -> {caracteristicas[:5]}")
+        
+        # 2. Características Estadísticas (Siguientes 3 elementos)
+        print(f"\nCaracterísticas Estadísticas {caracteristicas[5:8].shape}:")
+        print(f"  [Media Intensidad, Desviación Estándar, Entropía] -> {caracteristicas[5:8]}")
+        
+        # 3. Momentos de Hu (Siguientes 7 elementos)
+        print(f"\nMomentos de Hu (Invariantes) {caracteristicas[8:15].shape}:")
+        print(f"  {caracteristicas[8:15]}")
+        
+        # 4. Histogramas de Color (Siguientes 3 * hist_bins elementos)
+        fin_color = 15 + (3 * extractor.hist_bins)  # <-- Corregido self.hist_bins a extractor.hist_bins
+        print(f"\nHistogramas de Color HSV {caracteristicas[15:fin_color].shape}:")
+        print(f"  {caracteristicas[15:fin_color]}")
+        
+        # 5. Medidas (Últimos 4 elementos añadidos)
+        print(f"\nMedidas del Rectángulo Delimitador {caracteristicas[fin_color:].shape}:")
+        print(f"  [X, Y, Ancho, Alto] -> {caracteristicas[fin_color:]}")
+        
+        print("==============================================")
+    
+
 # vector = [Características Geométricas, Características Estadísticas, Momentos de Hu, Histogramas de Color]
