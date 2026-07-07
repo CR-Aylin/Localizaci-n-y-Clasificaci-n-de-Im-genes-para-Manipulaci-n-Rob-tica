@@ -68,6 +68,6 @@ if __name__ == "__main__":
     print(f"Posición real: X={pos_real_x:.2f} mm, Y={pos_real_y:.2f} mm")
     
     pos_x, pos_y = pixeles_a_mm(561, 939, 0, 0)
-    print(f"Coordenadas base: X={pos_x}, Y={pos_y}")
-    ROBOTS.move_to(base_pos_x+pos_x, base_pos_y+pos_y, 50, 0, wait=True)
+    print(f"Coordenadas : X= {pos_x}, Y= {pos_y}")
+    #ROBOTS.move_to(base_pos_x+pos_x, base_pos_y+pos_y, 50, 0, wait=True)
 
