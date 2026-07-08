@@ -73,6 +73,9 @@ class features_extractor:
         hist_s /= (hist_s.sum() + 1e-6)
         hist_v /= (hist_v.sum() + 1e-6)
 
+        # Concatenar histogramas en una sola variable ###
+        color_features = np.concatenate([hist_h, hist_s, hist_v])
+        
         medidas= self.largo_ancho(image)
 
         visual_features = np.concatenate([hu_moments, hist_h, hist_s, hist_v])
@@ -299,3 +302,4 @@ if __name__ == "__main__":
     
 
 # vector = [Características Geométricas, Características Estadísticas, Momentos de Hu, Histogramas de Color]
+#VECTOR = [Área, Perímetro, Circularidad, Compacidad, Relación de Aspecto , Media Intensidad, Desviación Estándar, Entropía ,Momentos de Hu (Invariantes) , Histogramas de Color HSV , X, Y, Ancho, Alto]]]
