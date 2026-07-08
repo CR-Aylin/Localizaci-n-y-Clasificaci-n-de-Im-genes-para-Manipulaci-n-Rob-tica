@@ -33,8 +33,11 @@ class NaiveBayes:
         return max(posteriors, key=posteriors.get)
 
 
-    def predict_with_confidence(self, x):                #Predice con confianza, donde por una probabilidad donde mayor es mejor, se utiliza para localizar por medio de ventana deslizante,
-                                                         #solo acepta si la confianza supera el umbral definido
+    def predict_with_confidence(self, x):                
+        '''
+        Predice con confianza, donde por una probabilidad donde mayor es mejor, se utiliza para localizar por medio de ventana deslizante,
+        solo acepta si la confianza supera el umbral definido
+        '''
         x = np.array(x)
         log_posteriors = {}
         for c in self.classes:
