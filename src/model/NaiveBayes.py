@@ -21,12 +21,14 @@ class NaiveBayes:
         X = np.array(X)
         return [self._predict_single(x) for x in X]
     
+    def _log_gaussian(self, x, c): # Log de la densidad gaussiana, calculado directamente (sin pasar por exp() y luego log()). 
+        var = self.var[c]
+        return -((x - self.mean[c]) ** 2) / (2 * var) - 0.5 * np.log(2 * np.pi * var)
+
     def _predict_single(self, x):
         posteriors = {}
         for c in self.classes:
-            exponent = np.exp(-((x - self.mean[c])**2) / (2 * self.var[c]))
-            prob = (1 / np.sqrt(2 * np.pi * self.var[c])) * exponent
-            posteriors[c] = np.sum(np.log(prob)) + np.log(self.prior[c])
+            posteriors[c] = np.sum(self._log_gaussian(x, c)) + np.log(self.prior[c])
         
         return max(posteriors, key=posteriors.get)
 
@@ -36,9 +38,7 @@ class NaiveBayes:
         x = np.array(x)
         log_posteriors = {}
         for c in self.classes:
-            exponent = np.exp(-((x - self.mean[c])**2) / (2 * self.var[c]))
-            prob = (1 / np.sqrt(2 * np.pi * self.var[c])) * exponent
-            log_posteriors[c] = np.sum(np.log(prob)) + np.log(self.prior[c])
+            log_posteriors[c] = np.sum(self._log_gaussian(x, c)) + np.log(self.prior[c])
 
         #Vuelve logs futuros a probabilidades normalizadas numericamente estables, restando el maximo antes de exponenciar
         max_log = max(log_posteriors.values())
