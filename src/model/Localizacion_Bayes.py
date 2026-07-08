@@ -6,7 +6,8 @@ from NaiveBayes import NaiveBayes
 def sliding_window_localization_bayes(board_image, model, extractor,
                                        window_size=(100, 100), step=20,
                                        confidence_threshold=0.6,
-                                       clase_fondo="Fondo"):
+                                       clase_fondo="Fondo",
+                                       norm_stats=None, pca=None):
     """
 
     Se recorre usando el metodo de ventana deslizante para localizar y clasificar los elementos usando NaiveBayes
@@ -45,8 +46,13 @@ def sliding_window_localization_bayes(board_image, model, extractor,
                 continue
 
             features = np.asarray(features, dtype=float)
-            if features.shape[0] != model.mean[model.classes[0]].shape[0]:
+            if features.shape[0] != model.mean[model.classes[0]].shape[0] and pca is None:
                 continue
+
+            if norm_stats is not None:
+                features = (features - norm_stats["medias"]) / norm_stats["stds"]
+            if pca is not None:
+                features = pca.transform(features.reshape(1, -1))[0]
 
             # Predecir clase y confianza (probabilidad posterior)
             label, confidence = model.predict_with_confidence(features)
