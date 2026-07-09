@@ -5,211 +5,370 @@
 #resive la ruta de una imagen x
 #PROCESO IMAGEN , GUARDAS EL VECTOR
 
+import cv2
 import numpy as np
+import os
+# from SVM_algorithm import SVM, SVM_PCA, sliding_window_localization_svm
+from Extraccion_caracteristicas import features_extractor
+from sklearn.svm import SVC
+from sklearn.decomposition import PCA
+
+### NUEVO ###
 
 class SVM:
-    def __init__(self, C=1.0, learning_rate=0.01, n_iterations=1000, tol=1e-4, seed=42):
-        """
-        Parámetros:
-            C: Parámetro de regularización. Mayor C = menos tolerante a errores (menos margen).
-            learning_rate: Tasa de aprendizaje inicial.
-            n_iterations: Número de épocas de entrenamiento.
-            tol: Tolerancia para early stopping.
-            seed: Semilla para reproducibilidad.
-        """
+    """
+    Clasificador SVM estándar con preprocesamiento.
+    """
+    def __init__(self, kernel='rbf', C=10.0, gamma='scale'):
+        self.kernel = kernel
         self.C = C
-        self.learning_rate = learning_rate
-        self.n_iterations = n_iterations
-        self.tol = tol
-        self.seed = seed
-        self.w = None
-        self.b = None
-
+        self.gamma = gamma
+        self.model = None
+        self.classes_ = None
+    
     def fit(self, X, y):
-        #Entrena el SVM binario y debe contener valores +1 o -1.
-        rng = np.random.default_rng(self.seed)
-        n_samples, n_features = X.shape
-
-        # Inicializar pesos y bias en ceros
-        self.w = np.zeros(n_features)
-        self.b = 0.0
-
-        # SGD: iterar sobre los datos múltiples veces (épocas)
-        for epoch in range(self.n_iterations):
-            # Barajar los índices en cada época
-            indices = rng.permutation(n_samples)
-            prev_w = self.w.copy()
-
-            for i in indices:
-                xi = X[i]
-                yi = y[i]
-
-                # Margen funcional: y * (w·x + b)
-                margin = yi * (np.dot(self.w, xi) + self.b)
-
-                # Actualización del gradiente
-                if margin >= 1:
-                    # Clasificación correcta con margen suficiente: solo regularización
-                    self.w -= self.learning_rate * (self.w)
-                else:
-                    # Error o margen insuficiente: hinge loss + regularización
-                    self.w -= self.learning_rate * (self.w - self.C * yi * xi)
-                    self.b += self.learning_rate * self.C * yi
-
-            # Tasa de aprendizaje decreciente (schedule)
-            self.learning_rate = self.learning_rate / (1 + 0.001 * epoch)
-
-            # Early stopping: si los pesos casi no cambian, detener
-            if np.linalg.norm(self.w - prev_w) < self.tol:
-                break
-
+        """Entrena el modelo SVM"""
+        self.model = SVC(kernel=self.kernel, C=self.C, gamma=self.gamma)
+        self.model.fit(X, y)
+        self.classes_ = self.model.classes_
         return self
-
-    def decision_function(self, X):
-        return np.dot(X, self.w) + self.b
-
+    
     def predict(self, X):
-        #Predice la clase (+1 o -1) para cada muestra.
-        scores = self.decision_function(X)
-        return np.where(scores >= 0, 1, -1)
+        """Predice la clase para cada muestra"""
+        return self.model.predict(X)
+    
+    def decision_function(self, X):
+        """Devuelve la distancia al hiperplano de decisión"""
+        return self.model.decision_function(X)
 
 
-class SVM_OvR:
-    #SVM Multiclase usando la estrategia One-vs-Rest (OvR).
-    #Entrena un SVM binario por cada clase (clase vs todas las demás).
-
-    def __init__(self, C=1.0, learning_rate=0.01, n_iterations=1000, tol=1e-4, seed=42):
+class SVM_PCA:
+    """
+    Clasificador SVM con reducción de dimensionalidad PCA.
+    """
+    def __init__(self, n_components=50, kernel='rbf', C=10.0, gamma='scale'):
+        self.n_components = n_components
+        self.kernel = kernel
         self.C = C
-        self.learning_rate = learning_rate
-        self.n_iterations = n_iterations
-        self.tol = tol
-        self.seed = seed
-        self.classes = None
-        self.classifiers = {}  # {clase: SVM_binario}
-
+        self.gamma = gamma
+        self.pca = PCA(n_components=n_components)
+        self.model = None
+        self.classes_ = None
+    
     def fit(self, X, y):
-        #Entrena un SVM binario por cada clase.
-        #y: array con etiquetas de clase (strings o enteros).
-        X = np.array(X, dtype=float)
-        y = np.array(y)
-        self.classes = np.unique(y)
-
-        for c in self.classes:
-            # Crear etiquetas binarias: +1 para la clase c, -1 para el resto
-            y_bin = np.where(y == c, 1, -1)
-
-            # Cada clasificador usa su propia tasa de aprendizaje (copia)
-            svm = SVM(
-                C=self.C,
-                learning_rate=self.learning_rate,
-                n_iterations=self.n_iterations,
-                tol=self.tol,
-                seed=self.seed
-            )
-            svm.fit(X, y_bin)
-            self.classifiers[c] = svm
-
+        """Entrena el modelo SVM con PCA"""
+        X_pca = self.pca.fit_transform(X)
+        self.model = SVC(kernel=self.kernel, C=self.C, gamma=self.gamma)
+        self.model.fit(X_pca, y)
+        self.classes_ = self.model.classes_
         return self
-
-    def decision_function(self, X):
-        # Retorna un diccionario con el score (distancia al hiperplano) de cada clase para cada muestra.
-        X = np.array(X, dtype=float)
-        scores = {}
-        for c in self.classes:
-            scores[c] = self.classifiers[c].decision_function(X)
-        return scores
-
+    
     def predict(self, X):
-        # Predice la clase asignando la muestra al clasificador con mayor score.
-        X = np.array(X, dtype=float)
-        scores = self.decision_function(X)
+        """Predice usando PCA + SVM"""
+        X_pca = self.pca.transform(X)
+        return self.model.predict(X_pca)
+    
+    def decision_function(self, X):
+        """Devuelve la distancia al hiperplano de decisión"""
+        X_pca = self.pca.transform(X)
+        return self.model.decision_function(X_pca)
 
-        # Si es una sola muestra
-        if X.ndim == 1:
-            return max(self.classes, key=lambda c: scores[c])
 
-        # Si son varias muestras
-        predictions = []
-        for i in range(X.shape[0]):
-            best_class = max(self.classes, key=lambda c: scores[c][i])
-            predictions.append(best_class)
-        return np.array(predictions)
+def sliding_window_localization_svm(board_image, model, extractor, window_size=(100, 100), step=20, dist_threshold=15.0):
+    """
+    Localiza objetos en una imagen usando ventana deslizante y SVM.
+    
+    Parámetros:
+    - board_image: Imagen del tablero
+    - model: Modelo SVM entrenado
+    - extractor: Extractor de características
+    - window_size: Tamaño de la ventana (ancho, alto)
+    - step: Paso de deslizamiento (píxeles)
+    - dist_threshold: Umbral de distancia para filtrado
+    
+    Retorna:
+    - Lista de detecciones con formato:
+        {'x': x_centro, 'y': y_centro, 'class': clase, 'confidence': confianza}
+    """
+    detections = []
+    h, w = board_image.shape[:2]
+    win_w, win_h = window_size
+    
+    # Recorrer la imagen con ventana deslizante
+    for y in range(0, h - win_h + 1, step):
+        for x in range(0, w - win_w + 1, step):
+            # Extraer la ventana
+            window = board_image[y:y+win_h, x:x+win_w]
+            
+            # Extraer características de la ventana
+            features = extractor.extract(window)
+            
+            if np.sum(features) == 0:
+                continue
+            
+            features = np.array(features).reshape(1, -1)
+            
+            # Predecir con SVM
+            try:
+                pred = model.predict(features)[0]
+                confidence = model.decision_function(features)
+                
+                # Si la confianza supera el umbral, guardar detección
+                if np.max(confidence) > dist_threshold:
+                    # Centro de la ventana
+                    centro_x = x + win_w // 2
+                    centro_y = y + win_h // 2
+                    
+                    detections.append({
+                        'x': centro_x,
+                        'y': centro_y,
+                        'class': pred,
+                        'confidence': np.max(confidence)
+                    })
+            except:
+                continue
+    
+    # Filtrar detecciones duplicadas (NMS simple)
+    detections = non_max_suppression(detections)
+    
+    return detections
 
-    def predict_with_confidence(self, x):
-        x = np.array(x, dtype=float).reshape(1, -1)
-        scores = self.decision_function(x)
-        scores = {c: float(scores[c][0]) for c in self.classes}
 
-        # Softmax numéricamente estable sobre los scores
-        max_score = max(scores.values())
-        exp_vals = {c: np.exp(v - max_score) for c, v in scores.items()}
-        total = sum(exp_vals.values())
-        probs = {c: v / total for c, v in exp_vals.items()}
+def non_max_suppression(detections, overlap_thresh=0.3):
+    """
+    Supresión no máxima para eliminar detecciones duplicadas.
+    """
+    if len(detections) == 0:
+        return detections
+    
+    # Ordenar por confianza descendente
+    detections = sorted(detections, key=lambda d: d['confidence'], reverse=True)
+    
+    keep = []
+    while len(detections) > 0:
+        # Tomar la detección con mayor confianza
+        best = detections.pop(0)
+        keep.append(best)
+        
+        # Filtrar las que se solapan demasiado
+        detections = [d for d in detections if not boxes_overlap(best, d, overlap_thresh)]
+    
+    return keep
 
-        label = max(probs, key=probs.get)
-        confidence = probs[label]
-        return label, confidence
 
-    def predict_from_image(self, image, extractor, norm_stats=None, pca=None):
-        """
-        Recibe una imagen, extrae el vector de características, lo normaliza, 
-        y devuelve la predicción con confianza.
-        Guarda internamente el último vector procesado para depuración.
-        """
-        # 1. Extraer características de la imagen
-        features = extractor.extract(image)
-        if features is None:
-            return None, 0.0, None
+def boxes_overlap(det1, det2, threshold=0.3):
+    """
+    Verifica si dos detecciones se solapan.
+    """
+    x1, y1 = det1['x'], det1['y']
+    x2, y2 = det2['x'], det2['y']
+    
+    # Distancia euclidiana entre centros
+    dist = np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    
+    # Si están demasiado cerca, se solapan
+    if dist < 50:  # Umbral fijo (puedes ajustarlo)
+        return True
+    
+    return False
 
-        features = np.asarray(features, dtype=float)
-        self.last_features_ = features.copy()  # Guardar el vector resultante
+### NUEVO ###
 
-        # 2. Normalizar usando las estadísticas del entrenamiento
-        if norm_stats is not None:
-            features = (features - norm_stats["medias"]) / norm_stats["stds"]
+def cargar_dataset(ruta_dataset):
+    """
+    Carga el dataset de entrenamiento desde una estructura de carpetas.
+    
+    Estructura esperada:
+    dataset/
+        Class_1/
+            imagen1.jpg
+            imagen2.jpg
+        Class_2/
+            imagen3.jpg
+            imagen4.jpg
+        ...
+    
+    Retorna:
+    - X: Array de características extraídas
+    - y: Array de etiquetas (nombres de clases)
+    """
+    X = []
+    y = []
+    
+    extractor = features_extractor(hist_bins=16, debug=False)
+    
+    # Recorrer todas las carpetas de clases
+    for clase in os.listdir(ruta_dataset):
+        ruta_clase = os.path.join(ruta_dataset, clase)
+        
+        if not os.path.isdir(ruta_clase):
+            continue
+        
+        print(f"Cargando clase: {clase}")
+        
+        # Recorrer todas las imágenes de la clase
+        for archivo in os.listdir(ruta_clase):
+            if archivo.lower().endswith(('.png', '.jpg', '.jpeg')):
+                ruta_imagen = os.path.join(ruta_clase, archivo)
+                
+                # Cargar imagen
+                imagen = cv2.imread(ruta_imagen)
+                if imagen is None:
+                    print(f"  ⚠ No se pudo cargar: {archivo}")
+                    continue
+                
+                # Extraer características
+                features = extractor.extract(imagen)
+                
+                if np.sum(features) > 0:  # Solo si no está vacía
+                    X.append(features)
+                    y.append(clase)
+    
+    return np.array(X), np.array(y)
 
-        # 3. Aplicar PCA si está disponible
-        if pca is not None:
-            features = pca.transform(features.reshape(1, -1))[0]
 
-        # 4. Predecir
-        label, confidence = self.predict_with_confidence(features)
-        return label, confidence, features
+def entrenar_svm(ruta_dataset, usar_pca=False, n_components=50):
+    """
+    Entrena el modelo SVM con el dataset.
+    
+    Parámetros:
+    - ruta_dataset: Ruta al directorio del dataset
+    - usar_pca: Si True, usa SVM con PCA
+    - n_components: Número de componentes principales (solo si usar_pca=True)
+    
+    Retorna:
+    - model: Modelo SVM entrenado
+    - X_train: Datos de entrenamiento
+    - y_train: Etiquetas de entrenamiento
+    """
+    print("=" * 60)
+    print("CARGANDO DATASET DE ENTRENAMIENTO")
+    print("=" * 60)
+    
+    X, y = cargar_dataset(ruta_dataset)
+    
+    print(f"\n✓ Dataset cargado: {len(X)} muestras")
+    print(f"✓ Clases encontradas: {np.unique(y)}")
+    
+    # Crear y entrenar modelo
+    if usar_pca:
+        print(f"\nEntrenando SVM con PCA (n_components={n_components})...")
+        model = SVM_PCA(n_components=n_components, kernel='rbf', C=10.0, gamma='scale')
+    else:
+        print("\nEntrenando SVM estándar...")
+        model = SVM(kernel='rbf', C=10.0, gamma='scale')
+    
+    model.fit(X, y)
+    print("✓ Modelo entrenado exitosamente")
+    
+    return model, X, y
 
-# ============================================================
-# Funciones auxiliares para integrar con el pipeline del proyecto
-# ============================================================
 
-def entrenar_svm(X_train, y_train, C=1.0, learning_rate=0.01, n_iterations=1000):
-    modelo = SVM_OvR(C=C, learning_rate=learning_rate, n_iterations=n_iterations)
-    modelo.fit(X_train, y_train)
-    return modelo
+def probar_svm_en_imagen(model, ruta_imagen, extractor, dist_threshold=15.0):
+    """
+    Prueba el modelo SVM en una imagen del tablero.
+    
+    Parámetros:
+    - model: Modelo SVM entrenado
+    - ruta_imagen: Ruta a la imagen del tablero
+    - extractor: Extractor de características
+    - dist_threshold: Umbral de distancia para filtrar fondo
+    """
+    print("\n" + "=" * 60)
+    print(f"PROBANDO SVM EN IMAGEN: {ruta_imagen}")
+    print("=" * 60)
+    
+    # Cargar imagen del tablero
+    board_image = cv2.imread(ruta_imagen)
+    if board_image is None:
+        print(f"✗ Error: No se pudo cargar la imagen {ruta_imagen}")
+        return
+    
+    print(f"✓ Imagen cargada: {board_image.shape}")
+    
+    # Aplicar ventana deslizante
+    print("\nAplicando ventana deslizante...")
+    detections = sliding_window_localization_svm(
+        board_image, 
+        model=model, 
+        extractor=extractor, 
+        window_size=(100, 100), 
+        step=20, 
+        dist_threshold=dist_threshold
+    )
+    
+    print(f"\n✓ Objetos detectados: {len(detections)}")
+    
+    # Mostrar detecciones
+    for i, det in enumerate(detections, 1):
+        print(f"\n  Detección {i}:")
+        print(f"    Clase: {det['class']}")
+        print(f"    Posición: ({det['x']}, {det['y']})")
+        print(f"    Confianza: {det['confidence']:.4f}")
+    
+    # Dibujar detecciones en la imagen
+    img_detecciones = board_image.copy()
+    for det in detections:
+        # Dibujar círculo en la posición detectada
+        cv2.circle(img_detecciones, (det['x'], det['y']), 10, (0, 255, 0), 2)
+        
+        # Mostrar etiqueta de clase
+        texto = f"{det['class']}"
+        cv2.putText(img_detecciones, texto, (det['x'] - 30, det['y'] - 15), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    
+    # Guardar imagen con detecciones
+    ruta_salida = ruta_imagen.replace('.jpg', '_detecciones_svm.jpg')
+    cv2.imwrite(ruta_salida, img_detecciones)
+    print(f"\n✓ Imagen con detecciones guardada en: {ruta_salida}")
+    
+    # Mostrar imagen (opcional)
+    cv2.imshow("Detecciones SVM", img_detecciones)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
-    # Ejemplo de uso con datos sintéticos
-    from sklearn.datasets import make_blobs
-
-    X, y = make_blobs(n_samples=300, centers=3, random_state=42, cluster_std=1.5)
-    # Convertir etiquetas numéricas a strings (como en el proyecto)
-    clases_str = ["Circulo", "Poligonos", "Fondo"]
-    y_str = np.array([clases_str[yi] for yi in y])
-
-    # Normalizar
-    medias = X.mean(axis=0)
-    stds = X.std(axis=0)
-    stds[stds == 0] = 1e-9
-    X_norm = (X - medias) / stds
-
-    # Entrenar
-    svm = SVM_OvR(C=1.0, learning_rate=0.01, n_iterations=500)
-    svm.fit(X_norm, y_str)
-
-    # Predecir
-    predicciones = svm.predict(X_norm)
-    exactitud = np.mean(predicciones == y_str)
-    print(f"Exactitud en datos de entrenamiento: {exactitud:.2%}")
-
-    # Probar predict_with_confidence
-    muestra = X_norm[0]
-    label, conf = svm.predict_with_confidence(muestra)
-    print(f"Muestra 0 → Clase: {label}, Confianza: {conf:.3f}")
+    # ==========================================================
+    # CONFIGURACIÓN - AJUSTA ESTAS RUTAS SEGÚN TU PROYECTO
+    # ==========================================================
+    
+    # Ruta al dataset de entrenamiento
+    RUTA_DATASET = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica-main\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica-main\\dataset\\Entrenamiento")
+    
+    # Ruta a la imagen del tablero para probar
+    RUTA_IMAGEN_TABLERO = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica-main\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica-main\\dataset\\Test\\WIN_20260702_17_07_52_Pro.jpg")
+    
+    # ==========================================================
+    # PASO 1: Entrenar el modelo SVM
+    # ==========================================================
+    
+    # Opción A: SVM estándar
+    model_svm, X_train, y_train = entrenar_svm(RUTA_DATASET, usar_pca=False)
+    
+    # Opción B: SVM con PCA (descomenta si quieres probarlo)
+    # model_svm, X_train, y_train = entrenar_svm(RUTA_DATASET, usar_pca=True, n_components=50)
+    
+    # ==========================================================
+    # PASO 2: Crear extractor de características
+    # ==========================================================
+    extractor = features_extractor(hist_bins=16, debug=False)
+    
+    # ==========================================================
+    # PASO 3: Probar el SVM en una imagen del tablero
+    # ==========================================================
+    
+    # NOTA: Deberás calibrar el dist_threshold según tus resultados
+    # Valores típicos: 10.0 - 20.0 para SVM
+    DIST_THRESHOLD = 15.0
+    
+    probar_svm_en_imagen(
+        model=model_svm,
+        ruta_imagen=RUTA_IMAGEN_TABLERO,
+        extractor=extractor,
+        dist_threshold=DIST_THRESHOLD
+    )
+    
+    print("\n" + "=" * 60)
+    print("PRUEBA COMPLETADA")
+    print("=" * 60)
