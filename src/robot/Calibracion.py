@@ -39,9 +39,18 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
 def Calibracion():
     cam = camara.Cam()
     #cam.configuracion_camara()
-    puntos, ruta = cam.sacar_foto("calibracion")
+    resultado = cam.sacar_foto("calibracion")
     if puntos is None:
         print("No se pudo capturar la foto de calibración.")
         return None
 
-    return puntos,ruta
+    return resultado
+
+"""
+resultado{
+    "puntos": puntos,
+    "referencia": (x_ref, y_ref),
+    "ruta": ruta_completa
+
+    }
+"""

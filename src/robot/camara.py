@@ -45,19 +45,18 @@ class Cam:
             print("No se pudo abrir la cámara")
             return None
 
-        ret, frame = captura.read()
+        pygame.init()
 
+        ret, frame = captura.read()
         if not ret:
-            print("No se pudo capturar imagen")
             captura.release()
+            pygame.quit()
             return None
 
         alto, ancho = frame.shape[:2]
 
-        pygame.init()
-
         pantalla = pygame.display.set_mode((ancho, alto))
-        pygame.display.set_caption("Seleccione 3 puntos")
+        pygame.display.set_caption("Seleccione 2 esquinas y 1 punto de referencia")
 
         fuente = pygame.font.SysFont("Arial", 20)
 
@@ -82,26 +81,31 @@ class Cam:
             # Dibujar puntos
             for i, p in enumerate(puntos):
 
-                pygame.draw.circle(pantalla, (255, 0, 0), p, 5)
+                color = (255, 0, 0)
+
+                if i == 2:
+                    color = (255, 255, 0)   # Punto de referencia
+
+                pygame.draw.circle(pantalla, color, p, 5)
 
                 texto = fuente.render(
                     f"P{i+1}: ({p[0]}, {p[1]})",
                     True,
-                    (255, 255, 0)
+                    (255, 255, 255)
                 )
 
                 pantalla.blit(texto, (10, 10 + i * 25))
 
-            # Dibujar rectángulo
-            if len(puntos) == 3:
+            # Rectángulo usando SOLO los dos primeros puntos
+            if len(puntos) >= 2:
 
-                xs = [p[0] for p in puntos]
-                ys = [p[1] for p in puntos]
+                x1, y1 = puntos[0]
+                x2, y2 = puntos[1]
 
-                xmin = min(xs)
-                xmax = max(xs)
-                ymin = min(ys)
-                ymax = max(ys)
+                xmin = min(x1, x2)
+                xmax = max(x1, x2)
+                ymin = min(y1, y2)
+                ymax = max(y1, y2)
 
                 pygame.draw.rect(
                     pantalla,
@@ -119,30 +123,28 @@ class Cam:
 
                 elif evento.type == pygame.KEYDOWN:
 
+                    # Reiniciar puntos
                     if evento.key == pygame.K_r:
                         puntos.clear()
+                        print("Puntos reiniciados.")
 
-                elif evento.type == pygame.MOUSEBUTTONDOWN:
+                    # Guardar imagen
+                    elif evento.key == pygame.K_c:
 
-                    if len(puntos) < 3:
-
-                        x, y = pygame.mouse.get_pos()
-                        puntos.append((x, y))
-
-                        print(f"Punto {len(puntos)}: ({x}, {y})")
-
-                        # Cuando ya existen 3 puntos
                         if len(puntos) == 3:
 
-                            xs = [p[0] for p in puntos]
-                            ys = [p[1] for p in puntos]
+                            x1, y1 = puntos[0]
+                            x2, y2 = puntos[1]
+                            x_ref, y_ref = puntos[2]
 
-                            xmin = min(xs)
-                            xmax = max(xs)
-                            ymin = min(ys)
-                            ymax = max(ys)
+                            xmin = min(x1, x2)
+                            xmax = max(x1, x2)
+                            ymin = min(y1, y2)
+                            ymax = max(y1, y2)
 
-                            if xmax > xmin and ymax > ymin:
+                            ret, frame = captura.read()
+
+                            if ret:
 
                                 recorte = frame[ymin:ymax, xmin:xmax]
 
@@ -156,18 +158,36 @@ class Cam:
 
                                 cv2.imwrite(ruta_completa, recorte)
 
-                                print("Recorte guardado en:", ruta_completa)
+                                print("Imagen guardada:", ruta_completa)
+                                print("Punto de referencia:", (x_ref, y_ref))
 
                                 captura.release()
                                 pygame.quit()
 
-                                return puntos, ruta_completa
+                                return {
+                                    "puntos": puntos,
+                                    "referencia": (x_ref, y_ref),
+                                    "ruta": ruta_completa
+                                }
+
+                    elif evento.key == pygame.K_ESCAPE:
+                        ejecutando = False
+
+                elif evento.type == pygame.MOUSEBUTTONDOWN:
+
+                    if len(puntos) < 3:
+
+                        x, y = pygame.mouse.get_pos()
+                        puntos.append((x, y))
+
+                        print(f"Punto {len(puntos)}: ({x}, {y})")
 
         captura.release()
         pygame.quit()
 
         return None
     
+"""
 
 
 if __name__ == "__main__":
@@ -185,6 +205,21 @@ if __name__ == "__main__":
 
         print("Imagen guardada en:")
         print(ruta)
+
+    else:
+        print("No se guardó ninguna imagen.")
+"""
+if __name__ == "__main__":
+
+    cam = Cam()
+
+    resultado = cam.sacar_foto("Prueba1")
+
+    if resultado:
+
+        print("Puntos:", resultado["puntos"])
+        print("Referencia:", resultado["referencia"])
+        print("Imagen:", resultado["ruta"])
 
     else:
         print("No se guardó ninguna imagen.")
