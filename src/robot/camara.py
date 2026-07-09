@@ -1,35 +1,24 @@
 import cv2
 import time
-import os 
+import pygame
+import os
+import numpy as np
 
-class Cam():
 
-    def configuracion_camara(self): 
+class Cam:
+
+    def configuracion_camara(self):
         # Abrir la cámara
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         time.sleep(2)
 
         # ---------- CONFIGURACIÓN ----------
-
-        # Desactivar enfoque automático
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-
-        # Ajustar enfoque manual
         cap.set(cv2.CAP_PROP_FOCUS, 20)
-
-        # Brillo
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 128)
-
-        # Contraste
         cap.set(cv2.CAP_PROP_CONTRAST, 64)
-
-        # Saturación (Intensidad de color)
         cap.set(cv2.CAP_PROP_SATURATION, 128)
-
-        # Balance de blancos automático
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
-
-        # Exposición automática
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
 
         print("Configuración aplicada")
@@ -42,51 +31,156 @@ class Cam():
 
             cv2.imshow("PTZ Pro 2", frame)
 
-            if cv2.waitKey(1) == 27:  # ESC para salir
+            if cv2.waitKey(1) == 27:  # ESC
                 break
 
         cap.release()
         cv2.destroyAllWindows()
-        
 
-    def sacar_foto(self, nombre="foto"):  # ← AGREGA self y valor por defecto
-        captura = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # abrir camara
+    # ===============================
+    # MÉTODO PARA TOMAR Y RECORTAR FOTO
+    # ===============================
+    def sacar_foto(self, nombre="foto"):
+
+        captura = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         time.sleep(2)
-        
-        # Capturar imagen
-        ret, frame = captura.read()
-        
-        # Verificar si capturó correctamente
-        if not ret or frame is None:
-            print("Error: No se pudo capturar el frame")
-            captura.release()
-            return None  # ← CORREGIDO: retornar None en error
-        
-        # Crear el directorio si no existe
-        ruta = r"dataset\Pruebas" 
-        if not os.path.exists(ruta):
-            os.makedirs(ruta)
-            print(f"Directorio creado: {ruta}")
 
-        ruta_completa = os.path.join(ruta, nombre + ".png")
-        cv2.imwrite(ruta_completa, frame)
-        print(f"Foto guardada en: {ruta_completa}")
-        
+        if not captura.isOpened():
+            print("No se pudo abrir la cámara")
+            return None
+
+        ret, frame = captura.read()
+
+        if not ret:
+            print("No se pudo capturar imagen")
+            captura.release()
+            return None
+
+        alto, ancho = frame.shape[:2]
+
+        pygame.init()
+
+        pantalla = pygame.display.set_mode((ancho, alto))
+        pygame.display.set_caption("Seleccione 3 puntos")
+
+        fuente = pygame.font.SysFont("Arial", 20)
+
+        puntos = []
+
+        ejecutando = True
+
+        while ejecutando:
+
+            ret, frame = captura.read()
+
+            if not ret:
+                break
+
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = np.rot90(frame_rgb)
+
+            superficie = pygame.surfarray.make_surface(frame_rgb)
+
+            pantalla.blit(superficie, (0, 0))
+
+            # Dibujar puntos
+            for i, p in enumerate(puntos):
+
+                pygame.draw.circle(pantalla, (255, 0, 0), p, 5)
+
+                texto = fuente.render(
+                    f"P{i+1}: ({p[0]}, {p[1]})",
+                    True,
+                    (255, 255, 0)
+                )
+
+                pantalla.blit(texto, (10, 10 + i * 25))
+
+            # Dibujar rectángulo
+            if len(puntos) == 3:
+
+                xs = [p[0] for p in puntos]
+                ys = [p[1] for p in puntos]
+
+                xmin = min(xs)
+                xmax = max(xs)
+                ymin = min(ys)
+                ymax = max(ys)
+
+                pygame.draw.rect(
+                    pantalla,
+                    (0, 255, 0),
+                    (xmin, ymin, xmax - xmin, ymax - ymin),
+                    2
+                )
+
+            pygame.display.flip()
+
+            for evento in pygame.event.get():
+
+                if evento.type == pygame.QUIT:
+                    ejecutando = False
+
+                elif evento.type == pygame.KEYDOWN:
+
+                    if evento.key == pygame.K_r:
+                        puntos.clear()
+
+                elif evento.type == pygame.MOUSEBUTTONDOWN:
+
+                    if len(puntos) < 3:
+
+                        x, y = pygame.mouse.get_pos()
+                        puntos.append((x, y))
+
+                        print(f"Punto {len(puntos)}: ({x}, {y})")
+
+                        # Cuando ya existen 3 puntos
+                        if len(puntos) == 3:
+
+                            xs = [p[0] for p in puntos]
+                            ys = [p[1] for p in puntos]
+
+                            xmin = min(xs)
+                            xmax = max(xs)
+                            ymin = min(ys)
+                            ymax = max(ys)
+
+                            # Evitar recortes vacíos
+                            if xmax > xmin and ymax > ymin:
+
+                                recorte = frame[ymin:ymax, xmin:xmax]
+
+                                ruta = r"dataset\Pruebas"
+                                os.makedirs(ruta, exist_ok=True)
+
+                                ruta_completa = os.path.join(
+                                    ruta,
+                                    nombre + ".png"
+                                )
+
+                                cv2.imwrite(ruta_completa, recorte)
+
+                                print("Recorte guardado en:", ruta_completa)
+
+                                captura.release()
+                                pygame.quit()
+
+                                return ruta_completa
+
         captura.release()
-        
-        return ruta_completa  
-"""
+        pygame.quit()
+
+        return None
+
+
 if __name__ == "__main__":
-    # Crear una instancia de la clase
-    mi_camara = Cam()  # ← CREAR INSTANCIA
-    
-    # Llamar al método con la instancia
-    ruta_guardada = mi_camara.sacar_foto("Prueba1")  # ← Usar instancia
-    
-    if ruta_guardada:
-        print(f" Foto guardada exitosamente en: {ruta_guardada}")
+
+    cam = Cam()
+
+    ruta = cam.sacar_foto("Prueba1")
+
+    if ruta:
+        print("Imagen guardada en:", ruta)
     else:
-        print(" Error al guardar la foto")
-    
-    # Opcional: abrir la cámara en vivo
-    # mi_camara.configuracion_camara()  # ← Usar instancia"""
+        print("No se guardó ninguna imagen.")
