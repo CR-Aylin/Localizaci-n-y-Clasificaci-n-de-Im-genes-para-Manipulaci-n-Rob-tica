@@ -91,8 +91,7 @@ class features_extractor:
         return VECTOR #final_features
 
     def get_feature_size(self):
-        # 5 (geom) + 3 (stat) + 7 (hu) + 3 * hist_bins (color)
-        return 5 + 3 + 7 + (3 * self.hist_bins)
+        return 5 + 3 + 7 + (3 * self.hist_bins) + 4
     
     def largo_ancho(self,img):
     
@@ -246,14 +245,11 @@ class features_extractor:
                 else:
                     extractor = features_extractor(hist_bins=16, debug=True)
                     caracteristicas = extractor.extract(image)
-                    print(f"Características extraídas: {caracteristicas.shape}")
-                    print(f"Vector de características 10 : {caracteristicas[:10]}...")
-                    print(f"Vector de características: {caracteristicas}")
-                    print(f"Tamaño total del vector: {len(caracteristicas)}")
                 
                 return caracteristicas
 
 
+""" 
 if __name__ == "__main__":
     
     #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
@@ -299,7 +295,6 @@ if __name__ == "__main__":
         print(f"  [X, Y, Ancho, Alto] -> {caracteristicas[fin_color:]}")
         
         print("==============================================")
-    
-
+"""
 # vector = [Características Geométricas, Características Estadísticas, Momentos de Hu, Histogramas de Color]
 #VECTOR = [Área, Perímetro, Circularidad, Compacidad, Relación de Aspecto , Media Intensidad, Desviación Estándar, Entropía ,Momentos de Hu (Invariantes) , Histogramas de Color HSV , X, Y, Ancho, Alto]]]
