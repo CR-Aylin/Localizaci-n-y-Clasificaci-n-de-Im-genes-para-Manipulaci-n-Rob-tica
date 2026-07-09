@@ -6,13 +6,14 @@ import serial.tools.list_ports as list_ports
 import time # time.sleep(3)  # Espera 3 segundos
 import os
 
+import src.model.ArchivoEtiquetas as Arch
 import src.robot.Calibracion as c
 import src.robot.camara as cama
 import src.model.Extraccion_caracteristicas as ec
 import src.robot.dobot_movement as dm
 
 #modelos
-import KNN as knn
+import src.model.KNN as knn
 
 
 
@@ -26,7 +27,8 @@ def Ejemplo(ROBOTS):
     ROBOTS.move_to(X, Y,50,0, wait=True)
 
 if __name__ == "__main__":
-        
+    #Arch.crear_archivoEtiquetas()
+    
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
 

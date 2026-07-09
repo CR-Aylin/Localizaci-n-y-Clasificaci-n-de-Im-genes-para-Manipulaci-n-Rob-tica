@@ -238,18 +238,18 @@ class features_extractor:
             plt.tight_layout()
             plt.show()
             
-            def proceso(Rutaimagen):
-                #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
-                image = cv2.imread(Rutaimagen)
-                
-                # Imagen se cargó correctamente
-                if image is None:
-                    print("No se pudo cargar la imagen. Verifica la ruta.")
-                else:
-                    extractor = features_extractor(hist_bins=16, debug=True)
-                    caracteristicas = extractor.extract(image)
-                
-                return caracteristicas
+    def proceso(Rutaimagen):
+        #image = cv2.imread("C:\\Users\\User\\OneDrive\\Escritorio\\Blender_Trabajo\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\WIN_20260702_19_15_01_Pro.jpg")
+        image = cv2.imread(Rutaimagen)
+        
+        # Imagen se cargó correctamente
+        if image is None:
+            print("No se pudo cargar la imagen. Verifica la ruta.")
+        else:
+            extractor = features_extractor(hist_bins=16, debug=True)
+            caracteristicas = extractor.extract(image)
+        
+        return caracteristicas
 
 
 """ 

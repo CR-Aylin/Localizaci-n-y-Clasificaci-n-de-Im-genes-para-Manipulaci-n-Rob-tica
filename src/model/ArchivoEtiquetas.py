@@ -4,9 +4,9 @@ import pandas as pd
 import Extraccion_caracteristicas as ec
 
 carpetas = [
-    r"\\dataset\\Entrenamiento\\Class_1",
-    r"\\dataset\\Entrenamiento\\Class_2",
-    r"\\dataset\\Entrenamiento\\Class_3"
+    os.path.join("dataset", "Entrenamiento", "Class_1"),
+    os.path.join("dataset", "Entrenamiento", "Class_2"),
+    os.path.join("dataset", "Entrenamiento", "Class_3")
 ]
 
 Clases = ["Circulo", "Cuadrados", "Fondo"]
@@ -15,82 +15,112 @@ Clases = ["Circulo", "Cuadrados", "Fondo"]
 def crear_archivoEtiquetas():
 
     datos = []
-    columnas = ["imagen"]
 
-    # Características geométricas
-    columnas += [
+    columnas = [
+        "imagen",
+
+        # Características geométricas
         "area",
         "perimetro",
         "circularidad",
         "compacidad",
-        "aspect_ratio"
-    ]
+        "aspect_ratio",
 
-    # Características estadísticas
-    columnas += [
+        # Características estadísticas
         "media_intensidad",
         "std_intensidad",
-        "entropia"
-    ]
+        "entropia",
 
-    # Momentos de Hu
-    columnas += [f"hu_{i}" for i in range(1, 8)]
+        # Momentos de Hu
+        *[f"hu_{i}" for i in range(1, 8)],
 
-    # Histograma H
-    columnas += [f"H_{i}" for i in range(16)]
+        # Histogramas HSV
+        *[f"H_{i}" for i in range(16)],
+        *[f"S_{i}" for i in range(16)],
+        *[f"V_{i}" for i in range(16)],
 
-    # Histograma S
-    columnas += [f"S_{i}" for i in range(16)]
-
-    # Histograma V
-    columnas += [f"V_{i}" for i in range(16)]
-
-    # Bounding Box
-    columnas += [
+        # Bounding Box
         "x",
         "y",
         "ancho",
-        "alto"
+        "alto",
+
+        # Clase
+        "clase"
     ]
 
-    # Etiqueta
-    columnas += ["clase"]
 
     for i, carpeta in enumerate(carpetas):
+
         clase = Clases[i]
-        print(f"\nProcesando carpeta: {carpeta}")
-        if os.path.exists(carpeta):
-            for carpeta_actual, _, archivos in os.walk(carpeta):
-                for archivo in archivos:
+
+        print("\nProcesando carpeta:", carpeta)
+
+        if not os.path.exists(carpeta):
+            print(" La ruta no existe")
+            continue
+
+
+        for carpeta_actual, _, archivos in os.walk(carpeta):
+
+            for archivo in archivos:
+
+                # Solo procesar imágenes
+                if archivo.lower().endswith((".jpg", ".png", ".jpeg", ".bmp")):
+
                     ruta_completa = os.path.join(carpeta_actual, archivo)
-                    print(f"Procesando: {ruta_completa}")
-                    vector_caracteristicas = ec.proceso(ruta_completa)
+
+                    print("Procesando:", ruta_completa)
+                    
+                    image = cv2.imread(ruta_completa)
+                    
+                    extractor = ec.features_extractor(hist_bins=16)
+                    vector_caracteristicas = extractor.extract(image)
+
+
+                    if vector_caracteristicas is None:
+                        print("No se obtuvieron características")
+                        continue
+
+
+                    print("Características obtenidas:",len(vector_caracteristicas))
+
+
                     datos.append(
                         [ruta_completa] +
                         list(vector_caracteristicas) +
                         [clase]
                     )
 
-        else:
-            print(f"La ruta no existe: {carpeta}")
 
+    print("\nTotal imágenes procesadas:", len(datos))
+
+
+    if len(datos) == 0:
+        print(" No hay datos para crear el CSV")
+        return
+
+
+    # Crear DataFrame
     df = pd.DataFrame(datos, columns=columnas)
 
-    # Guardar CSV
+
+    print("\nColumnas:", len(columnas))
+    print("Datos:", df.shape)
+
+
+    os.makedirs("dataset", exist_ok=True)
+
+
     df.to_csv(
-        "dataset/dataset.csv",
+        os.path.join("dataset", "dataset.csv"),
         index=False,
         encoding="utf-8-sig"
     )
 
-    print("Dataset guardado correctamente.")
+
+    print("\nDataset guardado correctamente")
     print(df.head())
 
-    """ Se ve asi el vector de características final:
-    VECTOR = np.concatenate([
-    geom_features,
-    stat_features,
-    visual_features,
-    medidas])
-    
-    """
+
+crear_archivoEtiquetas()
