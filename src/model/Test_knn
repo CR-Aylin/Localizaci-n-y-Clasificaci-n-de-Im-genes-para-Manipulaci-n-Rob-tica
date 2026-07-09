@@ -2,15 +2,24 @@ import os
 import time
 import cv2
 import numpy as np
+import joblib
 import matplotlib.pyplot as plt
+from collections import Counter
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, f1_score
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    confusion_matrix, 
+    classification_report, 
+    accuracy_score, 
+    f1_score
+)
 import seaborn as sns
 
 # Importar tus módulos propios
 from Extraccion_caracteristicas import features_extractor
 from KNN import KNN, sliding_window_localization
+
 
 # ============================================================
 # 1. FUNCIÓN PARA CARGAR EL DATASET DESDE CARPETAS
@@ -37,7 +46,8 @@ def cargar_dataset(ruta_base, extractor):
         if not os.path.isdir(ruta_clase):
             continue
             
-        archivos = [f for f in os.listdir(ruta_clase) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        archivos = [f for f in os.listdir(ruta_clase) 
+                    if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         print(f"  Procesando {clase}: {len(archivos)} imágenes")
         
         for archivo in archivos:
@@ -53,13 +63,15 @@ def cargar_dataset(ruta_base, extractor):
             X.append(features)
             y.append(clase)
     
-    return np.array(X), np.array(y), clases
+    return np.array(X), np.array(y), sorted(list(set(y)))
 
 
 # ============================================================
 # 2. FUNCIÓN DE EVALUACIÓN COMPLETA (Requisitos del PDF)
 # ============================================================
-def evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=False, n_components=15, k=5):
+def evaluar_knn(X_train, y_train, X_test, y_test, clases, 
+                usar_pca=False, n_components=15, k=5, 
+                guardar_modelos=False, ruta_guardado="modelos_knn"):
     print(f"\n{'='*60}")
     print(f"  EVALUACIÓN KNN {'CON PCA' if usar_pca else 'SIN PCA'} (k={k})")
     print(f"{'='*60}")
@@ -92,27 +104,52 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=False, n_comp
     print(f"Tiempo de inferencia (todo el test): {tiempo_inferencia*1000:.2f} ms")
     print(f"Tiempo promedio por muestra: {tiempo_inferencia*1000/len(X_test):.4f} ms")
     
-    # --- MÉTRICAS ---
+    # --- MÉTRICAS (Con labels para evitar errores) ---
     accuracy = accuracy_score(y_test, predicciones)
-    f1_macro = f1_score(y_test, predicciones, average='macro')
+    f1_macro = f1_score(y_test, predicciones, average='macro', 
+                        labels=clases, zero_division=0)
     print(f"\nPrecisión (Accuracy): {accuracy*100:.2f}%")
     print(f"F1 Score (macro): {f1_macro:.4f}")
     
     print("\nReporte de clasificación:")
-    print(classification_report(y_test, predicciones, target_names=clases))
+    print(classification_report(
+        y_test, predicciones, 
+        labels=clases,           # 🔑 Lista completa de clases
+        target_names=clases, 
+        zero_division=0
+    ))
     
     # --- MATRIZ DE CONFUSIÓN ---
     cm = confusion_matrix(y_test, predicciones, labels=clases)
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                 xticklabels=clases, yticklabels=clases)
-    plt.title(f"Matriz de Confusión KNN {'(con PCA)' if usar_pca else '(sin PCA)'}")
+    titulo = f"Matriz de Confusión KNN {'(con PCA)' if usar_pca else '(sin PCA)'}"
+    plt.title(titulo)
     plt.xlabel("Predicción")
     plt.ylabel("Real")
     plt.tight_layout()
     plt.show()
     
-    return knn, scaler, pca, accuracy, f1_macro, tiempo_entrenamiento, tiempo_inferencia
+    # --- GUARDAR MODELOS (Opcional, para usar después en ventana deslizante) ---
+    if guardar_modelos:
+        os.makedirs(ruta_guardado, exist_ok=True)
+        sufijo = "pca" if usar_pca else "sin_pca"
+        joblib.dump(scaler, os.path.join(ruta_guardado, f"scaler_{sufijo}.pkl"))
+        joblib.dump(knn, os.path.join(ruta_guardado, f"knn_{sufijo}.pkl"))
+        if pca is not None:
+            joblib.dump(pca, os.path.join(ruta_guardado, f"pca_{sufijo}.pkl"))
+        print(f"\n✅ Modelos guardados en: {ruta_guardado}/")
+    
+    return {
+        'knn': knn,
+        'scaler': scaler,
+        'pca': pca,
+        'accuracy': accuracy,
+        'f1': f1_macro,
+        't_entrenamiento': tiempo_entrenamiento,
+        't_inferencia': tiempo_inferencia
+    }
 
 
 # ============================================================
@@ -120,43 +157,64 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=False, n_comp
 # ============================================================
 if __name__ == "__main__":
     # --- CONFIGURACIÓN ---
-    RUTA_DATASET = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\Entrenamiento")
-    # Ajusta la ruta según tu estructura real
+    # 🔧 AJUSTA ESTA RUTA a tu carpeta de entrenamiento (la que tiene subcarpetas de clases)
+    RUTA_DATASET = r"P:\IA - JAR\Localización y Clasificación de Imágenes para Manipulación Robótica\dataset\Entrenamiento"
     
-    # Dividir dataset (80% train, 20% test)
     TEST_SIZE = 0.2
     RANDOM_SEED = 42
     K_VECINOS = 5
     N_COMPONENTES_PCA = 15
+    GUARDAR_MODELOS = True  # Poner True para guardar modelos entrenados
     
     # --- CARGAR DATASET ---
     print("Cargando dataset...")
     extractor = features_extractor(hist_bins=16, debug=False)
     X, y, clases = cargar_dataset(RUTA_DATASET, extractor)
-    print(f"Dataset total: {X.shape[0]} muestras, {X.shape[1]} características, {len(clases)} clases")
+    print(f"\nDataset total: {X.shape[0]} muestras, {X.shape[1]} características, {len(clases)} clases")
     
-    # --- DIVIDIR TRAIN/TEST ---
-    np.random.seed(RANDOM_SEED)
-    indices = np.random.permutation(len(X))
-    n_test = int(len(X) * TEST_SIZE)
+    # --- VERIFICAR QUE HAY SUFICIENTES MUESTRAS POR CLASE ---
+    print("\nDistribución de clases en el dataset:")
+    for clase in clases:
+        total = sum(y == clase)
+        print(f"  {clase}: {total} muestras")
+        if total < 5:
+            print(f"    ⚠️  ADVERTENCIA: Muy pocas muestras de {clase}. La división estratificada puede fallar.")
     
-    idx_test = indices[:n_test]
-    idx_train = indices[n_test:]
+    # --- DIVIDIR TRAIN/TEST DE FORMA ESTRATIFICADA (SOLUCIÓN 1) ---
+    print("\nDividiendo dataset (80% train, 20% test, estratificado)...")
+    try:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, 
+            test_size=TEST_SIZE, 
+            random_state=RANDOM_SEED,
+            stratify=y  # 🔑 CLAVE: mantiene proporción de clases
+        )
+    except ValueError as e:
+        print(f"\n❌ ERROR en la división estratificada: {e}")
+        print("Esto ocurre si alguna clase tiene menos de 2 muestras.")
+        print("Añade más imágenes a esa clase o usa división aleatoria simple.")
+        raise
     
-    X_train, y_train = X[idx_train], y[idx_train]
-    X_test, y_test = X[idx_test], y[idx_test]
     print(f"Train: {len(X_train)} | Test: {len(X_test)}")
+    print("\nDistribución en Train:")
+    for clase in clases:
+        print(f"  {clase}: {sum(y_train == clase)}")
+    print("Distribución en Test:")
+    for clase in clases:
+        print(f"  {clase}: {sum(y_test == clase)}")
     
     # --- EVALUAR SIN PCA ---
-    knn_sin_pca, scaler_sin, _, acc_sin, f1_sin, t_ent_sin, t_inf_sin = evaluar_knn(
+    resultados_sin_pca = evaluar_knn(
         X_train, y_train, X_test, y_test, clases, 
-        usar_pca=False, k=K_VECINOS
+        usar_pca=False, k=K_VECINOS,
+        guardar_modelos=GUARDAR_MODELOS
     )
     
     # --- EVALUAR CON PCA ---
-    knn_con_pca, scaler_con, pca_con, acc_con, f1_con, t_ent_con, t_inf_con = evaluar_knn(
+    resultados_con_pca = evaluar_knn(
         X_train, y_train, X_test, y_test, clases, 
-        usar_pca=True, n_components=N_COMPONENTES_PCA, k=K_VECINOS
+        usar_pca=True, n_components=N_COMPONENTES_PCA, k=K_VECINOS,
+        guardar_modelos=GUARDAR_MODELOS
     )
     
     # --- COMPARACIÓN FINAL (Para el informe del PDF) ---
@@ -165,8 +223,37 @@ if __name__ == "__main__":
     print("="*60)
     print(f"{'Métrica':<30} | {'Sin PCA':<15} | {'Con PCA':<15}")
     print("-"*60)
-    print(f"{'Accuracy':<30} | {acc_sin*100:>13.2f}% | {acc_con*100:>13.2f}%")
-    print(f"{'F1 Score (macro)':<30} | {f1_sin:>15.4f} | {f1_con:>15.4f}")
-    print(f"{'T. Entrenamiento (ms)':<30} | {t_ent_sin*1000:>13.4f} | {t_ent_con*1000:>13.4f}")
-    print(f"{'T. Inferencia total (ms)':<30} | {t_inf_sin*1000:>13.2f} | {t_inf_con*1000:>13.2f}")
+    print(f"{'Accuracy':<30} | {resultados_sin_pca['accuracy']*100:>13.2f}% | {resultados_con_pca['accuracy']*100:>13.2f}%")
+    print(f"{'F1 Score (macro)':<30} | {resultados_sin_pca['f1']:>15.4f} | {resultados_con_pca['f1']:>15.4f}")
+    print(f"{'T. Entrenamiento (ms)':<30} | {resultados_sin_pca['t_entrenamiento']*1000:>13.4f} | {resultados_con_pca['t_entrenamiento']*1000:>13.4f}")
+    print(f"{'T. Inferencia total (ms)':<30} | {resultados_sin_pca['t_inferencia']*1000:>13.2f} | {resultados_con_pca['t_inferencia']*1000:>13.2f}")
     print(f"{'Dimensionalidad':<30} | {X_train.shape[1]:>15} | {N_COMPONENTES_PCA:>15}")
+    
+    # --- PRUEBA RÁPIDA EN UNA IMAGEN DEL TABLERO (OPCIONAL) ---
+    print("\n" + "="*60)
+    print("  PRUEBA EN IMAGEN DEL TABLERO (Ventana Deslizante)")
+    print("="*60)
+    
+    # 🔧 AJUSTA ESTA RUTA a tu imagen del tablero
+    RUTA_TABLERO = r"P:\IA - JAR\Localización y Clasificación de Imágenes para Manipulación Robótica\dataset\WIN_20260702_19_15_01_Pro.jpg"
+    
+    if os.path.exists(RUTA_TABLERO):
+        # Cargar el modelo SIN PCA (o el que mejor accuracy tenga)
+        scaler = resultados_sin_pca['scaler']
+        knn = resultados_sin_pca['knn']
+        
+        img_tablero = cv2.imread(RUTA_TABLERO)
+        if img_tablero is not None:
+            print(f"Analizando tablero: {RUTA_TABLERO}")
+            # NOTA: Para usar la ventana deslizante con escalado, 
+            # debes actualizar KNN.txt según las correcciones previas
+            print("⚠️  Recuerda actualizar sliding_window_localization en KNN.txt")
+            print("    para que reciba el scaler y aplique la transformación.")
+            # resultados = sliding_window_localization(img_tablero, knn, extractor, scaler)
+            # print(f"Objetos detectados: {len(resultados)}")
+        else:
+            print("❌ No se pudo cargar la imagen del tablero.")
+    else:
+        print(f"⚠️  Ruta del tablero no encontrada: {RUTA_TABLERO}")
+    
+    print("\n✅ Proceso completado.")
