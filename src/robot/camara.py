@@ -142,7 +142,6 @@ class Cam:
                             ymin = min(ys)
                             ymax = max(ys)
 
-                            # Evitar recortes vacíos
                             if xmax > xmin and ymax > ymin:
 
                                 recorte = frame[ymin:ymax, xmin:xmax]

@@ -17,14 +17,15 @@ ESCALA_Y = L_Y/ L_imgY # mm por píxel
 
 def calcular_offsets(pixel_x, pixel_y, robot_x, robot_y):
 
-    # Offset en X:
+    # OffsetX:
     # offset_x = X_robot - pixel_x * ESCALA_X
+    offset_x = robot_x - (pixel_x * ESCALA_X)
 
-    # Offset en Y:
+    # OffsetY:
     # offset_y = Y_robot - pixel_y * ESCALA_Y
 
-    offset_x = robot_x - pixel_x * ESCALA_X
-    offset_y = robot_y - pixel_y * ESCALA_Y
+
+    offset_y = robot_y - (pixel_y * ESCALA_Y)
 
     return offset_x, offset_y
 
@@ -38,16 +39,9 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
 def Calibracion():
     cam = camara.Cam()
     #cam.configuracion_camara()
-    puntos = cam.sacar_foto("calibracion")
+    puntos, ruta = cam.sacar_foto("calibracion")
     if puntos is None:
         print("No se pudo capturar la foto de calibración.")
         return None
 
-    #puntos en un archivo
-    with open("puntos_calibracion.txt", "w") as f:
-        for p in puntos:
-            f.write(f"{p[0]},{p[1]}\n")
-
-    print("Puntos de calibración guardados en 'puntos_calibracion.txt'.")
-
-    return puntos
+    return puntos,ruta
