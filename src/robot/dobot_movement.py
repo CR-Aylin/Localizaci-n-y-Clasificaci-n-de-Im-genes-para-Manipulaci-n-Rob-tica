@@ -47,6 +47,11 @@ def Home(robot):  # Ahora recibe el robot como parámetro
     HOME_R = 0
     
     robot.move_to(HOME_X, HOME_Y, HOME_Z, HOME_R, wait=True)
+    pose = robot.pose()
+    print(f"Posición actual: {pose}")
+
+
+
 
 def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
     # Convertimos los pixeles de la cámara a coordenadas X e Y del robot
@@ -76,7 +81,7 @@ def mover_robot(robot,Cordenaa1, Cordenaa2):
     time.sleep(1)
     robot.move_to(Cordenaa1[0],Cordenaa1[1],40,Velocidad,Aceleracion, wait=True)
     robot.move_to(Cordenaa2[0],Cordenaa2[1],Velocidad,Aceleracion, wait=True)
-
+"""
 if __name__ == "__main__":
 
     # Conectar robot
@@ -95,5 +100,5 @@ if __name__ == "__main__":
 
     # Mover robot (descomentar cuando estés listo)
     #ROBOTS.move_to(base_pos_x, base_pos_y,Velocidad,Aceleracion, wait=True)
-
+"""
     

@@ -4,7 +4,7 @@ import pygame
 import time
 import os 
 
-import camara
+#import camara as camara
 
 L_X = 27*10
 L_Y = 37.3*10
@@ -35,7 +35,7 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
     mm_x = pix_x * ESCALA_X + offsetx
     mm_y = pix_y * ESCALA_Y + offsety
     return mm_x, mm_y
-
+"""
 def Calibracion():
     cam = camara.Cam()
     #cam.configuracion_camara()
@@ -45,6 +45,7 @@ def Calibracion():
         return None
 
     return resultado
+"""
 
 """
 resultado{

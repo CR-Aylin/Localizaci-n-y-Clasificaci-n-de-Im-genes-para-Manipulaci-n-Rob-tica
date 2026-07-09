@@ -5,19 +5,24 @@ import serial.tools.list_ports as list_ports  # Cambio importante
 import time
 import os
 
-import Calibracion
-import Extraccion_caracteristicas as ec
-import dobot_movement as dm
+import src.robot.Calibracion as c
+import src.robot.camara as cama
+import src.model.Extraccion_caracteristicas as ec
+import src.robot.dobot_movement as dm
 
-ROBOTS =dm.conectar()
+ROBOTS = dm.conectar()
+
 dm.Home(ROBOTS)
-puntos, ruta = Calibracion.Calibracion()
-Vector = ec.proceso(ruta)
+
+cam = cama.Cam()
+resultados = cam.sacar_foto("Prueba1")
+
+print(resultados)
 
 #Aqui Colocar Algoritmos una vez funcionen
 
 #una vez identificado el objeto , mover robot
-#dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
+dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
 
 
 

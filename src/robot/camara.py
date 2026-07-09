@@ -187,6 +187,23 @@ class Cam:
 
         return None
     
+    def probar():
+
+        cam = Cam()
+
+        resultado = cam.sacar_foto("Prueba1")
+
+        if resultado:
+
+            print("Puntos:", resultado["puntos"])
+            print("Referencia:", resultado["referencia"])
+            print("Imagen:", resultado["ruta"])
+
+        else:
+            print("No se guardó ninguna imagen.")
+            
+        return resultado
+    
 """
 
 
@@ -209,17 +226,3 @@ if __name__ == "__main__":
     else:
         print("No se guardó ninguna imagen.")
 """
-if __name__ == "__main__":
-
-    cam = Cam()
-
-    resultado = cam.sacar_foto("Prueba1")
-
-    if resultado:
-
-        print("Puntos:", resultado["puntos"])
-        print("Referencia:", resultado["referencia"])
-        print("Imagen:", resultado["ruta"])
-
-    else:
-        print("No se guardó ninguna imagen.")
