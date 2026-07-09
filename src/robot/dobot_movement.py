@@ -17,6 +17,13 @@ LIMITES_DOBOT = {
     'R': {'min': -90, 'max': 90}
 }
 
+def calcular_centro(x, y, ancho, alto):
+
+    centro_x = x + ancho / 2
+    centro_y = y + alto / 2
+
+    return centro_x, centro_y
+
 def conectar():
     puertos = list(list_ports.comports())
     
@@ -79,13 +86,13 @@ if __name__ == "__main__":
     ROBOTS.move_to(pos_x, pos_y,Velocidad ,Aceleracion, wait=True)
 
 
-# Abrir pinza
-ROBOTS.grip(True)
-time.sleep(1)
+    # Abrir pinza
+    ROBOTS.grip(True)
+    time.sleep(1)
 
-# Cerrar pinza
-ROBOTS.grip(False)
-time.sleep(1)
+    # Cerrar pinza
+    ROBOTS.grip(False)
+    time.sleep(1)
 
-#ROBOTS.close()
+    #ROBOTS.close()
     
