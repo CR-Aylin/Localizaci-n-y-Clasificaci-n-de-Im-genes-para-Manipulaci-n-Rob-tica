@@ -77,7 +77,7 @@ def entrenar_svm(ruta_dataset, usar_pca=False, n_components=50):
         model = SVM_PCA(n_components=n_components, kernel='rbf', C=10.0, gamma='scale')
     else:
         print("\nEntrenando SVM estándar...")
-        model = SVM(kernel='rbf', C=10.0, gamma='scale')
+        model = SVM(kernel='rbf', C=10.0, gamma='scale')  
     
     inicio = time.time()
     model.fit(X, y)
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     # ==========================================================
     
     # NOTA: Deberás calibrar el dist_threshold según tus resultados
-    DIST_THRESHOLD = 15.0
+    DIST_THRESHOLD = 2.0
     
     probar_svm_en_imagen(
         model=model_svm,

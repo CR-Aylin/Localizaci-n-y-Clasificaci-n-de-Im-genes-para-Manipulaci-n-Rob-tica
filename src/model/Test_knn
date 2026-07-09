@@ -1,0 +1,172 @@
+import os
+import time
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, f1_score
+import seaborn as sns
+
+# Importar tus módulos propios
+from Extraccion_caracteristicas import features_extractor
+from KNN import KNN, sliding_window_localization
+
+# ============================================================
+# 1. FUNCIÓN PARA CARGAR EL DATASET DESDE CARPETAS
+# ============================================================
+def cargar_dataset(ruta_base, extractor):
+    """
+    Recorre carpetas de clases y extrae características.
+    Estructura esperada:
+        ruta_base/
+            Clase_1/
+                img1.jpg
+                img2.jpg
+            Clase_2/
+                img3.jpg
+    """
+    X = []  # Características
+    y = []  # Etiquetas (nombres de clase)
+    
+    clases = sorted(os.listdir(ruta_base))
+    print(f"Clases detectadas: {clases}")
+    
+    for clase in clases:
+        ruta_clase = os.path.join(ruta_base, clase)
+        if not os.path.isdir(ruta_clase):
+            continue
+            
+        archivos = [f for f in os.listdir(ruta_clase) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        print(f"  Procesando {clase}: {len(archivos)} imágenes")
+        
+        for archivo in archivos:
+            ruta_img = os.path.join(ruta_clase, archivo)
+            img = cv2.imread(ruta_img)
+            if img is None:
+                continue
+                
+            features = extractor.extract(img)
+            if np.sum(features) == 0 or np.isnan(features).any():
+                continue
+                
+            X.append(features)
+            y.append(clase)
+    
+    return np.array(X), np.array(y), clases
+
+
+# ============================================================
+# 2. FUNCIÓN DE EVALUACIÓN COMPLETA (Requisitos del PDF)
+# ============================================================
+def evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=False, n_components=15, k=5):
+    print(f"\n{'='*60}")
+    print(f"  EVALUACIÓN KNN {'CON PCA' if usar_pca else 'SIN PCA'} (k={k})")
+    print(f"{'='*60}")
+    
+    # --- ESCALADO (OBLIGATORIO PARA KNN) ---
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # --- REDUCCIÓN DIMENSIONAL (OPCIONAL) ---
+    pca = None
+    if usar_pca:
+        pca = PCA(n_components=n_components)
+        X_train_scaled = pca.fit_transform(X_train_scaled)
+        X_test_scaled = pca.transform(X_test_scaled)
+        print(f"PCA: {X_train.shape[1]} -> {n_components} componentes")
+        print(f"Varianza explicada: {pca.explained_variance_ratio_.sum()*100:.2f}%")
+    
+    # --- ENTRENAMIENTO (Medir tiempo) ---
+    knn = KNN(k=k)
+    t0 = time.time()
+    knn.fit(X_train_scaled, y_train)
+    tiempo_entrenamiento = time.time() - t0
+    print(f"Tiempo de entrenamiento: {tiempo_entrenamiento*1000:.4f} ms")
+    
+    # --- INFERENCIA (Medir tiempo) ---
+    t0 = time.time()
+    predicciones = knn.predict(X_test_scaled)
+    tiempo_inferencia = time.time() - t0
+    print(f"Tiempo de inferencia (todo el test): {tiempo_inferencia*1000:.2f} ms")
+    print(f"Tiempo promedio por muestra: {tiempo_inferencia*1000/len(X_test):.4f} ms")
+    
+    # --- MÉTRICAS ---
+    accuracy = accuracy_score(y_test, predicciones)
+    f1_macro = f1_score(y_test, predicciones, average='macro')
+    print(f"\nPrecisión (Accuracy): {accuracy*100:.2f}%")
+    print(f"F1 Score (macro): {f1_macro:.4f}")
+    
+    print("\nReporte de clasificación:")
+    print(classification_report(y_test, predicciones, target_names=clases))
+    
+    # --- MATRIZ DE CONFUSIÓN ---
+    cm = confusion_matrix(y_test, predicciones, labels=clases)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=clases, yticklabels=clases)
+    plt.title(f"Matriz de Confusión KNN {'(con PCA)' if usar_pca else '(sin PCA)'}")
+    plt.xlabel("Predicción")
+    plt.ylabel("Real")
+    plt.tight_layout()
+    plt.show()
+    
+    return knn, scaler, pca, accuracy, f1_macro, tiempo_entrenamiento, tiempo_inferencia
+
+
+# ============================================================
+# 3. SCRIPT PRINCIPAL
+# ============================================================
+if __name__ == "__main__":
+    # --- CONFIGURACIÓN ---
+    RUTA_DATASET = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\Entrenamiento")
+    # Ajusta la ruta según tu estructura real
+    
+    # Dividir dataset (80% train, 20% test)
+    TEST_SIZE = 0.2
+    RANDOM_SEED = 42
+    K_VECINOS = 5
+    N_COMPONENTES_PCA = 15
+    
+    # --- CARGAR DATASET ---
+    print("Cargando dataset...")
+    extractor = features_extractor(hist_bins=16, debug=False)
+    X, y, clases = cargar_dataset(RUTA_DATASET, extractor)
+    print(f"Dataset total: {X.shape[0]} muestras, {X.shape[1]} características, {len(clases)} clases")
+    
+    # --- DIVIDIR TRAIN/TEST ---
+    np.random.seed(RANDOM_SEED)
+    indices = np.random.permutation(len(X))
+    n_test = int(len(X) * TEST_SIZE)
+    
+    idx_test = indices[:n_test]
+    idx_train = indices[n_test:]
+    
+    X_train, y_train = X[idx_train], y[idx_train]
+    X_test, y_test = X[idx_test], y[idx_test]
+    print(f"Train: {len(X_train)} | Test: {len(X_test)}")
+    
+    # --- EVALUAR SIN PCA ---
+    knn_sin_pca, scaler_sin, _, acc_sin, f1_sin, t_ent_sin, t_inf_sin = evaluar_knn(
+        X_train, y_train, X_test, y_test, clases, 
+        usar_pca=False, k=K_VECINOS
+    )
+    
+    # --- EVALUAR CON PCA ---
+    knn_con_pca, scaler_con, pca_con, acc_con, f1_con, t_ent_con, t_inf_con = evaluar_knn(
+        X_train, y_train, X_test, y_test, clases, 
+        usar_pca=True, n_components=N_COMPONENTES_PCA, k=K_VECINOS
+    )
+    
+    # --- COMPARACIÓN FINAL (Para el informe del PDF) ---
+    print("\n" + "="*60)
+    print("  COMPARACIÓN FINAL")
+    print("="*60)
+    print(f"{'Métrica':<30} | {'Sin PCA':<15} | {'Con PCA':<15}")
+    print("-"*60)
+    print(f"{'Accuracy':<30} | {acc_sin*100:>13.2f}% | {acc_con*100:>13.2f}%")
+    print(f"{'F1 Score (macro)':<30} | {f1_sin:>15.4f} | {f1_con:>15.4f}")
+    print(f"{'T. Entrenamiento (ms)':<30} | {t_ent_sin*1000:>13.4f} | {t_ent_con*1000:>13.4f}")
+    print(f"{'T. Inferencia total (ms)':<30} | {t_inf_sin*1000:>13.2f} | {t_inf_con*1000:>13.2f}")
+    print(f"{'Dimensionalidad':<30} | {X_train.shape[1]:>15} | {N_COMPONENTES_PCA:>15}")
