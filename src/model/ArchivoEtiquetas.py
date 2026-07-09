@@ -4,9 +4,9 @@ import pandas as pd
 import Extraccion_caracteristicas as ec
 
 carpetas = [
-    r"C:\ruta\de\tu\primera_carpeta",
-    r"C:\ruta\de\tu\segunda_carpeta",
-    r"C:\ruta\de\tu\tercera_carpeta"
+    r"\\dataset\\Entrenamiento\\Class_1",
+    r"\\dataset\\Entrenamiento\\Class_2",
+    r"\\dataset\\Entrenamiento\\Class_3"
 ]
 
 Clases = ["Circulo", "Cuadrados", "Fondo"]
