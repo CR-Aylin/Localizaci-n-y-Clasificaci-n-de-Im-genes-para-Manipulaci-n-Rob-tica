@@ -40,8 +40,8 @@ def conectar():
     robot = Dobot(port=puerto, verbose=False)
     return robot
 
-def Home(robot):  # Ahora recibe el robot como parámetro
-    HOME_X = 200
+def Home(robot):  
+    HOME_X = 250
     HOME_Y = 0
     HOME_Z = 50
     HOME_R = 0
@@ -70,7 +70,7 @@ def mover_robot(robot,Cordenaa1, Cordenaa2):
     robot.suck(False)
     time.sleep(1)
 
-    print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
+    #print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
 
 
     robot.move_to(Cordenaa1[0],Cordenaa1[1],Velocidad,Aceleracion, wait=True)
