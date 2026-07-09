@@ -17,7 +17,7 @@ Vector = ec.proceso(ruta)
 #Aqui Colocar Algoritmos una vez funcionen
 
 #una vez identificado el objeto , mover robot
-dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
+#dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
 
 
 

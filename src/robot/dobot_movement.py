@@ -62,6 +62,7 @@ def mover_robot(robot,Cordenaa1, Cordenaa2):
 
     # Abrir pinza
     robot.grip(True)
+    robot.suck(False)
     time.sleep(1)
 
     print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
@@ -71,8 +72,9 @@ def mover_robot(robot,Cordenaa1, Cordenaa2):
 
     #Cerrar pinza
     robot.grip(False)
+    robot.suck(False)
     time.sleep(1)
-
+    robot.move_to(Cordenaa1[0],Cordenaa1[1],40,Velocidad,Aceleracion, wait=True)
     robot.move_to(Cordenaa2[0],Cordenaa2[1],Velocidad,Aceleracion, wait=True)
 
 if __name__ == "__main__":
