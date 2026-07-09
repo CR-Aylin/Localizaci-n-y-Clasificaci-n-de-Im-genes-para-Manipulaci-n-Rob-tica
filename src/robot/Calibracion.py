@@ -35,6 +35,14 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
     mm_x = pix_x * ESCALA_X + offsetx
     mm_y = pix_y * ESCALA_Y + offsety
     return mm_x, mm_y
+
+def coordernadas_n(pixel_x, pixel_y, robot_x, robot_y):
+    offsetx , offsety =  calcular_offsets(pixel_x, pixel_y, robot_x, robot_y)
+    
+    X,Y = pixeles_a_mm(pixel_x, pixel_y, offsetx, offsety)
+    
+    return [X,Y]
+    
 """
 def Calibracion():
     cam = camara.Cam()

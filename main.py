@@ -20,9 +20,20 @@ resultados = cam.sacar_foto("Prueba1")
 print(resultados)
 
 #Aqui Colocar Algoritmos una vez funcionen
-
 #una vez identificado el objeto , mover robot
-dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
+
+#pixel_x, pixel_y, = resultado["puntos"]
+
+pixel_x, pixel_y, = resultados["referencia"]
+pose = ROBOTS.pose()
+robot_x, robot_y = pose[0] , pose[1]
+coor = c.coordernadas_n(pixel_x, pixel_y, robot_x, robot_y)
+
+print(coor)
+pose = ROBOTS.pose()
+print(pose)
+
+#dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
 
 
 
