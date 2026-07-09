@@ -20,6 +20,21 @@ import src.model.Test_svm as svm
 """ extractor = ec.features_extractor(hist_bins=16, debug=True)
     vector_caracteristicas = extractor.extract(image)
 """
+def procesoImagen(ruta_completa):
+    image = cv2.imread(ruta_completa)
+
+    extractor = ec.features_extractor(hist_bins=16)
+    vector_caracteristicas = extractor.extract(image)
+    
+    return vector_caracteristicas
+    
+""" Se ve asi el vector de características final:
+    VECTOR = np.concatenate([
+    geom_features,
+    stat_features,
+    visual_features,
+    medidas])
+"""  
 
 def Ejemplo(ROBOTS):
     
