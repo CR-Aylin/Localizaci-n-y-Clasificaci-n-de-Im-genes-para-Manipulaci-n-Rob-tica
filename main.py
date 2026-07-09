@@ -10,8 +10,10 @@ import src.robot.camara as cama
 import src.model.Extraccion_caracteristicas as ec
 import src.robot.dobot_movement as dm
 
-ROBOTS = dm.conectar()
 
+
+ROBOTS = dm.conectar()
+#//////////////////////////////////////////////////////////////
 dm.Home(ROBOTS)
 
 cam = cama.Cam()
@@ -27,13 +29,25 @@ print(resultados)
 pixel_x, pixel_y, = resultados["referencia"]
 pose = ROBOTS.pose()
 robot_x, robot_y = pose[0] , pose[1]
-coor = c.coordernadas_n(pixel_x, pixel_y, robot_x, robot_y)
+
+coor , offsetx , offsety  = c.coordernadas_n(pixel_x, pixel_y, robot_x, robot_y) # una vez
 
 print(coor)
 pose = ROBOTS.pose()
 print(pose)
 
-#dm.mover_robot(ROBOTS,Cordenaa1, Cordenaa2)
+
+
+Npixel_x = 169
+Npixel_y = 381
+
+
+X,Y = c.pixeles_a_mm(Npixel_x, Npixel_y, offsetx, offsety)
+print(X,Y)
+
+ROBOTS.move_to(X, Y,50,0, wait=True)
+
+#dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
 
 
 

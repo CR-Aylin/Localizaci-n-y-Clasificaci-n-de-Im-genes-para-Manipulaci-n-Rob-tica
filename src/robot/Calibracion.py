@@ -41,7 +41,7 @@ def coordernadas_n(pixel_x, pixel_y, robot_x, robot_y):
     
     X,Y = pixeles_a_mm(pixel_x, pixel_y, offsetx, offsety)
     
-    return [X,Y]
+    return [X,Y] , offsetx , offsety
     
 """
 def Calibracion():
