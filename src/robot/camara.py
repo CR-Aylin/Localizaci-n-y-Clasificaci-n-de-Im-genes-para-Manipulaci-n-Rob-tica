@@ -4,7 +4,6 @@ import pygame
 import os
 import numpy as np
 
-
 class Cam:
 
     def configuracion_camara(self):
@@ -37,9 +36,6 @@ class Cam:
         cap.release()
         cv2.destroyAllWindows()
 
-    # ===============================
-    # MÉTODO PARA TOMAR Y RECORTAR FOTO
-    # ===============================
     def sacar_foto(self, nombre="foto"):
 
         captura = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -166,7 +162,7 @@ class Cam:
                                 captura.release()
                                 pygame.quit()
 
-                                return ruta_completa
+                                return puntos, ruta_completa
 
         captura.release()
         pygame.quit()
@@ -178,9 +174,17 @@ if __name__ == "__main__":
 
     cam = Cam()
 
-    ruta = cam.sacar_foto("Prueba1")
+    resultado = cam.sacar_foto("Prueba1")
 
-    if ruta:
-        print("Imagen guardada en:", ruta)
+    if resultado:
+
+        puntos, ruta = resultado
+
+        print("Puntos seleccionados:")
+        print(puntos)
+
+        print("Imagen guardada en:")
+        print(ruta)
+
     else:
         print("No se guardó ninguna imagen.")
