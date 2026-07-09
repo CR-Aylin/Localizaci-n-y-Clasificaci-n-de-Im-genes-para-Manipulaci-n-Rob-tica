@@ -257,3 +257,7 @@ if __name__ == "__main__":
         print(f"⚠️  Ruta del tablero no encontrada: {RUTA_TABLERO}")
     
     print("\n✅ Proceso completado.")
+
+"""
+hola
+"""
