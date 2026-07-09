@@ -54,7 +54,26 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
     mm_y = pix_y * ESCALA_Y + offsety
     return mm_x, mm_y
 
-#funcion de trasformacion dentro del espacio pos pixel - pos dobot
+def mover_robot(robot,Cordenaa1, Cordenaa2):
+
+    # Obtener posición actual
+    pose = robot.pose()
+    print(f"Posición actual: {pose}")
+
+    # Abrir pinza
+    robot.grip(True)
+    time.sleep(1)
+
+    print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
+
+
+    robot.move_to(Cordenaa1[0],Cordenaa1[1],Velocidad,Aceleracion, wait=True)
+
+    #Cerrar pinza
+    robot.grip(False)
+    time.sleep(1)
+
+    robot.move_to(Cordenaa2[0],Cordenaa2[1],Velocidad,Aceleracion, wait=True)
 
 if __name__ == "__main__":
 
@@ -73,26 +92,6 @@ if __name__ == "__main__":
     print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
 
     # Mover robot (descomentar cuando estés listo)
-    ROBOTS.move_to(base_pos_x, base_pos_y,Velocidad,Aceleracion, wait=True)
+    #ROBOTS.move_to(base_pos_x, base_pos_y,Velocidad,Aceleracion, wait=True)
 
-#561. 939 x , y
-    #objeto está en el centro de la imagen (960, 540)
-    pos_real_x, pos_real_y = pixeles_a_mm(960, 540)
-    print(f"Posición real: X={pos_real_x:.2f} mm, Y={pos_real_y:.2f} mm")
-    
-    pos_x, pos_y ,z = pixeles_a_mm(561, 939)
-    print(f"Coordenadas : X= {pos_x}, Y= {pos_y}")
-    #    ROBOTS.move_to(x, y,z,r, Velocidad ,Aceleracion, wait=True)
-    ROBOTS.move_to(pos_x, pos_y,Velocidad ,Aceleracion, wait=True)
-
-
-    # Abrir pinza
-    ROBOTS.grip(True)
-    time.sleep(1)
-
-    # Cerrar pinza
-    ROBOTS.grip(False)
-    time.sleep(1)
-
-    #ROBOTS.close()
     
