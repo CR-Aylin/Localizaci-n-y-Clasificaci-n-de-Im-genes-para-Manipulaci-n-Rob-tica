@@ -14,8 +14,12 @@ import src.robot.dobot_movement as dm
 
 #modelos
 import src.model.KNN as knn
+import src.model.SVM as svm
+import src.model.Test_svm as svm 
 
-
+""" extractor = ec.features_extractor(hist_bins=16, debug=True)
+    vector_caracteristicas = extractor.extract(image)
+"""
 
 def Ejemplo(ROBOTS):
     
@@ -27,7 +31,7 @@ def Ejemplo(ROBOTS):
     ROBOTS.move_to(X, Y,50,0, wait=True)
 
 if __name__ == "__main__":
-    #Arch.crear_archivoEtiquetas()
+    #Arch.crear_archivoEtiquetas() #esta guardado no es necesario
     
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
@@ -54,7 +58,6 @@ if __name__ == "__main__":
     match (modelo, redu):
         case (1, TRUE):
             print("KNN - PCA")
-            
         case (1, False):
             print("KNN - PCA")
         case (2, TRUE):
