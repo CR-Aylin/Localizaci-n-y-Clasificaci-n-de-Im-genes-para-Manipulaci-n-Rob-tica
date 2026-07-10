@@ -5,9 +5,9 @@ from collections import Counter
 import cv2
 import numpy as np
 
-from Extractor_Seguro_Bayes import ExtractorSeguro
-from NaiveBayes import NaiveBayes
-from PCA_Bayes import PCA
+from src.model.Extractor_Seguro_Bayes import ExtractorSeguro
+from src.model.NaiveBayes import NaiveBayes
+from src.model.PCA_Bayes import PCA
 
 CLASES = ["Class_1", "Class_2", "Class_3"]
 
@@ -287,8 +287,7 @@ def evaluar_modelo(X, y, test_size=0.2, k=5, usar_pca=False, varianza_objetivo=0
     evaluar_cross_validation(X, y, k=k, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
 
 
-def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
-                   mostrar=True, ruta_salida=None):
+def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,mostrar=True, ruta_salida=None):
 
     if isinstance(imagen,str):
         imagen=cv2.imread(imagen)
@@ -300,6 +299,8 @@ def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
     if len(objetos)==0:
         print("No se encontraron objetos")
         return
+    
+    resultados = []
 
     for contorno,features in objetos:
 
@@ -342,6 +343,12 @@ def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
         print(f"Confianza: {confianza:.2%}")
         print(f"Centro: ({cx}, {cy})")
 
+        resultados.append({
+            "clase": clase,
+            "confianza": confianza,
+            "centro": (cx, cy)
+        })
+
     if ruta_salida is not None:
         cv2.imwrite(ruta_salida,salida)
 
@@ -349,6 +356,8 @@ def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
         cv2.imshow("Deteccion",salida)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+    return resultados
 
 def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianza_objetivo=0.95):
     """
@@ -362,13 +371,10 @@ def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianz
 
     return entrenar_modelo_final(X, y, extractor, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
 
+"""
 
 if __name__ == "__main__":
 
-
-    # ============================
-    # Cargar dataset una sola vez
-    # ============================
     X, y, extractor = cargar_y_describir_dataset(
         ruta_dataset="dataset/Entrenamiento"
     )
@@ -439,3 +445,5 @@ if __name__ == "__main__":
         mostrar=True,
         ruta_salida="salida/resultado_con_pca.jpg"
     )
+
+"""
