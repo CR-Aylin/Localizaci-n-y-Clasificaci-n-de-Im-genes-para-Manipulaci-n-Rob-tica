@@ -123,7 +123,7 @@ def crear_archivoEtiquetas(hist_bins=16, chroma_threshold=12):
                         print("Características obtenidas:", len(vector_caracteristicas))
 
                         datos.append(
-                            [P_imagen] +
+                            list(P_imagen )+
                             list(vector_caracteristicas) +
                             [clase]
                         )
