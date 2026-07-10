@@ -15,9 +15,12 @@ import src.robot.dobot_movement as dm
 
 #modelos
 import src.model.KNN as knn
+
 #import src.model.SVM as svm
 import src.model.Test_svm as svm 
 import src.model.Entrenar_Naive_Bayes as nb
+
+import src.model.Test_knn as tk
 
 
 def Ejemplo(ROBOTS, offsetx, offsety):
@@ -55,34 +58,23 @@ if __name__ == "__main__":
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
 
     ruta = r"dataset\prueba1\ala.jpg"
+    ruta_dataset=r"dataset/Entrenamiento"
 
     match (modelo, redu):
         case (1, True):
             print("KNN - PCA")
+            resultados = tk.ejecutar_knn_con_pca(ruta)
+            print(resultados)
+            #Cuad, Cir = resultados
+            #coorCir = Cir["centro"]
+            #coorCuad = Cuad['centro']
+
         case (1, False):
             print("KNN")
-            X, y, extractor = knn.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
-            knn.evaluar_modelo(X, y, usar_pca=False)
-
-            modelo, extractor, norm_stats, pca = knn.entrenar_modelo_final(
-                X,
-                y,
-                extractor,
-                usar_pca=False
-            )
-            resultados = knn.evaluar_imagen(
-                ruta,
-                modelo,
-                extractor,
-                norm_stats,
-                pca=None,
-                mostrar=True,
-                ruta_salida="salida/resultado_knn_sin_pca.jpg"
-            )
-            
-            Cuad, Cir = resultados
-            coorCir = Cir["centro"]
-            coorCuad = Cuad['centro']
+            resultados = tk.ejecutar_knn_sin_pca(ruta)
+            #Cuad, Cir = resultados
+            #coorCir = Cir["centro"]
+            #coorCuad = Cuad['centro']
         case (2, True):
             print("NaivesBayes - PCA")
             X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
@@ -154,7 +146,7 @@ if __name__ == "__main__":
         case _:
             print("Combinación no válida")
 
-print(f"Coordenadas Circulo = {coorCir}")
-print(f"Coordenadas Cuadrado = {coorCuad}")
+#print(f"Coordenadas Circulo = {coorCir}")
+#print(f"Coordenadas Cuadrado = {coorCuad}")
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
 ##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
