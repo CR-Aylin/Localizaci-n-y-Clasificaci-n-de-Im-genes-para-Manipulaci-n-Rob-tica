@@ -48,7 +48,7 @@ if __name__ == "__main__":
     cam = cama.Cam()
     resultados = cam.sacar_foto("Prueba1")
 
-    print(resultados)
+    #print(resultados)
     
     pixel_x, pixel_y, = resultados["referencia"]
     pose = ROBOTS.pose()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     modelo = int(input("Seleccione Modelo: "))
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
 
-    ruta = r"dataset\prueba1\ala.jpg"
+    ruta = resultados['ruta'] #'ruta': 'dataset\\Pruebas\\Prueba1.png'
     ruta_dataset=r"dataset/Entrenamiento"
 
     match (modelo, redu):
