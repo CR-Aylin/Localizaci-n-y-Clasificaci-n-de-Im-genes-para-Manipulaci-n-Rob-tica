@@ -22,6 +22,13 @@ import src.model.Entrenar_Naive_Bayes as nb
 
 import src.model.Test_knn as tk
 
+ruta = r"dataset\prueba1\ala.jpg"
+
+
+def obtener_centro(datos_clase):
+    (x1, y1), (x2, y2) = datos_clase['coordenadas_cuadrado']
+    return ((x1 + x2) // 2, (y1 + y2) // 2)
+
 
 def Ejemplo(ROBOTS, offsetx, offsety):
     
@@ -34,14 +41,14 @@ def Ejemplo(ROBOTS, offsetx, offsety):
 
 if __name__ == "__main__":
     #Arch.crear_archivoEtiquetas() #esta guardado no es necesario
-    """ #descomentar con robot 
+    #descomentar con robot 
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
 
     cam = cama.Cam()
     resultados = cam.sacar_foto("Prueba1")
 
-    #print(resultados)
+    print(resultados)
     
     pixel_x, pixel_y, = resultados["referencia"]
     pose = ROBOTS.pose()
@@ -52,7 +59,7 @@ if __name__ == "__main__":
 
     print(f"Coordenadas Calculadas = {coor}")
     print(f"Coordenadas Actual = {pose} ")
-"""
+
     #Aqui Colocar Algoritmos una vez funcionen
     modelo = int(input("Seleccione Modelo: "))
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
@@ -64,17 +71,23 @@ if __name__ == "__main__":
         case (1, True):
             print("KNN - PCA")
             resultados = tk.ejecutar_knn_con_pca(ruta)
-            print(resultados)
-            #Cuad, Cir = resultados
-            #coorCir = Cir["centro"]
-            #coorCuad = Cuad['centro']
 
+            Cuad = resultados[np.str_('Class_2')]
+            Cir = resultados[np.str_('Class_1')]
+
+            coorCuad = obtener_centro(Cuad)  
+            coorCir = obtener_centro(Cir)    
+            
         case (1, False):
             print("KNN")
             resultados = tk.ejecutar_knn_sin_pca(ruta)
-            #Cuad, Cir = resultados
-            #coorCir = Cir["centro"]
-            #coorCuad = Cuad['centro']
+            
+            Cuad = resultados[np.str_('Class_2')]
+            Cir = resultados[np.str_('Class_1')]
+
+            coorCuad = obtener_centro(Cuad)  
+            coorCir = obtener_centro(Cir)    
+
         case (2, True):
             print("NaivesBayes - PCA")
             X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
@@ -132,13 +145,22 @@ if __name__ == "__main__":
             
         case (3, True):
             print("SVM - PCA")
-            resultados = svm.ejecutar_deteccion_PCA()
+            resultados = svm.ejecutar_deteccion_PCA(
+                                ruta_dataset=r"dataset\Entrenamiento",
+                                ruta_imagen_tablero=ruta,
+                                confidence_threshold=0.65,
+                                n_components=50
+                            )
             Cuad,Cir = resultados
             coorCir = [Cir['x'], Cir['y']]
             coorCuad = [Cuad['x'], Cuad['y']]
         case (3, False):
             print("SVM")
-            resultados = svm.ejecutar_deteccion()
+            resultados = svm.ejecutar_deteccion(
+                            ruta_dataset=r"dataset\Entrenamiento",
+                            ruta_imagen_tablero=ruta,
+                            confidence_threshold=0.65
+                        )
             Cuad,Cir = resultados
             coorCir = [Cir['x'], Cir['y']]
             coorCuad = [Cuad['x'], Cuad['y']]
