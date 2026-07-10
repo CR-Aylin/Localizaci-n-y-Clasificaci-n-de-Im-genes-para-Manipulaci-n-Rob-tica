@@ -76,13 +76,14 @@ def entrenar_svm(ruta_dataset, usar_pca=False, n_components=50):
     return model, X, y
 
 
-def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5):
+def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5,
+                          window_size=(100, 100), step=20, mostrar_ventana=True):
     print(f"PROBANDO SVM EN IMAGEN: {ruta_imagen}")
 
     board_image = cv2.imread(ruta_imagen)
     if board_image is None:
         print(f"Error: No se pudo cargar la imagen {ruta_imagen}")
-        return
+        return None
 
     print(f"Imagen cargada: {board_image.shape}")
     print("\nAplicando ventana deslizante...")
@@ -92,8 +93,8 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
         board_image,
         model=model,
         extractor=extractor,
-        window_size=(100, 100),
-        step=20,
+        window_size=window_size,
+        step=step,
         confidence_threshold=confidence_threshold
     )
     fin = time.time()
@@ -172,29 +173,40 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
     cv2.imwrite(ruta_salida, img_detecciones)
     print(f"\nImagen con detecciones guardada en: {ruta_salida}")
 
-    cv2.imshow("Detecciones SVM", img_detecciones)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if mostrar_ventana:
+        cv2.imshow("Detecciones SVM", img_detecciones)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     # Se retorna la lista de detecciones finales (cada una con su clase y posición)
     # para que quien llame a la función pueda usarlas más allá de la consola/imagen.
     return detections_filtradas
 
 
-if __name__ == "__main__":
-
-    RUTA_DATASET = r"dataset\Entrenamiento"
-
-    RUTA_IMAGEN_TABLERO = r"dataset\prueba1\ala.jpg"
-    RUTA_IMAGEN_Circulo = r"dataset\Entrenamiento\Class_2\WIN_20260702_19_15_53_Pro.jpg"
-    RUTA_IMAGEN_Cuadrado = r"dataset\Entrenamiento\Class_1\WIN_20260702_19_10_43_Pro.jpg"
+def ejecutar_deteccion(
+    ruta_dataset=r"dataset\Entrenamiento",
+    ruta_imagen_tablero=r"dataset\prueba1\ala.jpg",
+    confidence_threshold=0.65,
+    usar_pca=False,
+    hist_bins=16,
+    window_size=(100, 100),
+    step=20,
+    mostrar_ventana=True
+):
 
     # Se entrena con la CARPETA del dataset completo, no con una imagen suelta
-    model_svm, X_train, y_train = entrenar_svm(RUTA_DATASET, usar_pca=False)
-    extractor = features_extractor(hist_bins=16, debug=False)
-    CONFIDENCE_THRESHOLD = 0.65
+    model_svm, X_train, y_train = entrenar_svm(ruta_dataset, usar_pca=usar_pca)
+    extractor = features_extractor(hist_bins=hist_bins, debug=False)
 
-    resultados = probar_svm_en_imagen(model_svm, RUTA_IMAGEN_TABLERO, extractor, CONFIDENCE_THRESHOLD)
+    resultados = probar_svm_en_imagen(
+        model_svm,
+        ruta_imagen_tablero,
+        extractor,
+        confidence_threshold=confidence_threshold,
+        window_size=window_size,
+        step=step,
+        mostrar_ventana=mostrar_ventana
+    )
 
     print("\n===== RESUMEN: OBJETOS Y POSICIÓN =====")
     if not resultados:
@@ -210,3 +222,83 @@ if __name__ == "__main__":
             )
 
     print("PRUEBA COMPLETADA")
+
+    return resultados
+
+def ejecutar_deteccion_PCA(
+    ruta_dataset=r"dataset\Entrenamiento",
+    ruta_imagen_tablero=r"dataset\prueba1\ala.jpg",
+    confidence_threshold=0.65,
+    n_components=50,
+    hist_bins=16,
+    window_size=(100, 100),
+    step=20,
+    mostrar_ventana=True
+):
+    """
+    Ejecuta la detección utilizando un clasificador SVM + PCA.
+    """
+
+    print("===== SVM + PCA =====")
+
+    # Entrenar usando PCA
+    model_svm, X_train, y_train = entrenar_svm(
+        ruta_dataset=ruta_dataset,
+        usar_pca=True,
+        n_components=n_components
+    )
+
+    extractor = features_extractor(
+        hist_bins=hist_bins,
+        debug=False
+    )
+
+    resultados = probar_svm_en_imagen(
+        model=model_svm,
+        ruta_imagen=ruta_imagen_tablero,
+        extractor=extractor,
+        confidence_threshold=confidence_threshold,
+        window_size=window_size,
+        step=step,
+        mostrar_ventana=mostrar_ventana
+    )
+
+    print("\n===== RESUMEN =====")
+
+    if not resultados:
+        print("No se detectaron objetos.")
+    else:
+        for i, det in enumerate(resultados, start=1):
+            clase = (
+                str(det["class"][0])
+                if isinstance(det["class"], np.ndarray)
+                else str(det["class"])
+            )
+
+            x1, y1, x2, y2 = det["bbox"]
+
+            print(
+                f"{i}. Clase: {clase} | "
+                f"Centro: ({det['x']}, {det['y']}) | "
+                f"BBox: ({x1}, {y1}, {x2}, {y2}) | "
+                f"Confianza: {det['confidence']:.3f}"
+            )
+
+    print("PRUEBA COMPLETADA")
+
+    return resultados
+
+
+if __name__ == "__main__":
+    ejecutar_deteccion(
+        ruta_dataset=r"dataset\Entrenamiento",
+        ruta_imagen_tablero=r"dataset\prueba1\ala.jpg",
+        confidence_threshold=0.65
+    )
+
+    ejecutar_deteccion_PCA(
+        ruta_dataset=r"dataset\Entrenamiento",
+        ruta_imagen_tablero=r"dataset\prueba1\ala.jpg",
+        confidence_threshold=0.65,
+        n_components=50
+    )
