@@ -6,6 +6,7 @@ import serial.tools.list_ports as list_ports
 import time # time.sleep(3)  # Espera 3 segundos
 import os
 
+
 import src.model.ArchivoEtiquetas as Arch
 import src.robot.Calibracion as c
 import src.robot.camara as cama
@@ -16,6 +17,7 @@ import src.robot.dobot_movement as dm
 import src.model.KNN as knn
 #import src.model.SVM as svm
 import src.model.Test_svm as svm 
+import src.model.Entrenar_Naive_Bayes as nb
 
 
 def Ejemplo(ROBOTS, offsetx, offsety):
@@ -50,8 +52,10 @@ if __name__ == "__main__":
 """
     #Aqui Colocar Algoritmos una vez funcionen
     modelo = int(input("Seleccione Modelo: "))
-    redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano
-    
+    redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
+
+    ruta = r"dataset\prueba1\ala.jpg"
+
     match (modelo, redu):
         case (1, True):
             print("KNN - PCA")
@@ -59,8 +63,59 @@ if __name__ == "__main__":
             print("KNN")
         case (2, True):
             print("NaivesBayes - PCA")
+            X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
+            nb.evaluar_modelo(
+                X,
+                y,
+                usar_pca=True,
+                varianza_objetivo=0.95
+            )
+
+            modelo_pca, extractor, norm_stats_pca, pca_modelo = nb.entrenar_modelo_final(
+                X,
+                y,
+                extractor,
+                usar_pca=True,
+                varianza_objetivo=0.95
+            )
+            resultados =nb.evaluar_imagen(
+                ruta,
+                modelo_pca,
+                extractor,
+                norm_stats_pca,
+                pca=pca_modelo,
+                mostrar=True,
+                ruta_salida="salida/resultado_con_pca.jpg"
+            )
+            #print(resultados)
+
+            Cuad,Cir = resultados
+            coorCir = Cir["centro"]
+            coorCuad = Cuad['centro']
         case (2, False):
             print("NaivesBayes")
+            X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
+            nb.evaluar_modelo(X, y, usar_pca=False)
+
+            modelo, extractor, norm_stats, pca = nb.entrenar_modelo_final(
+                X,
+                y,
+                extractor,
+                usar_pca=False
+            )
+            resultados =nb.evaluar_imagen(
+                ruta,
+                modelo,
+                extractor,
+                norm_stats,
+                pca=None,
+                mostrar=True,
+                ruta_salida="salida/resultado_sin_pca.jpg"
+            )
+            Cuad,Cir = resultados
+            coorCir = Cir["centro"]
+            coorCuad = Cuad['centro']
+            
         case (3, True):
             print("SVM - PCA")
             resultados = svm.ejecutar_deteccion_PCA()
