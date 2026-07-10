@@ -17,6 +17,10 @@ import src.model.KNN as knn
 import src.model.SVM as svm
 import src.model.Test_svm as svm 
 
+#Modelo Naive Bayes
+import src.model.Entrenar_NaiveBayes as enb
+import src.model.Localizacion_Bayes as lb
+
 """ extractor = ec.features_extractor(hist_bins=16, debug=True)
     vector_caracteristicas = extractor.extract(image)
 """
@@ -88,3 +92,45 @@ if __name__ == "__main__":
 
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
 ##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
+
+objeto_reconocido = None
+    posicion_pixeles = None
+ 
+    if modelo == 2:  # Naive Bayes (unico algoritmo integrado en este flujo por ahora)
+        ruta_modelo_bayes = "modelo_bayes.pkl"
+ 
+        # Si ya existe un modelo entrenado guardado, se reutiliza en vez de volver a entrenar cada vez que se ejecuta el robot
+        if os.path.exists(ruta_modelo_bayes):
+            with open(ruta_modelo_bayes, "rb") as f:
+                modelo_bayes, extractor_bayes, norm_stats_bayes, pca_bayes = pickle.load(f)
+        else:
+            modelo_bayes, extractor_bayes, norm_stats_bayes, pca_bayes = enb.entrenar_y_evaluar(
+                ruta_dataset="dataset_imagenes", usar_pca=redu
+            )
+            with open(ruta_modelo_bayes, "wb") as f:
+                pickle.dump((modelo_bayes, extractor_bayes, norm_stats_bayes, pca_bayes), f)
+ 
+        # Imagen completa del tablero recien capturada por la camara
+        imagen_tablero = resultados.get("imagen")
+        if imagen_tablero is None:
+            ruta_imagen = resultados.get("ruta", "Prueba1.jpg")
+            imagen_tablero = cv2.imread(ruta_imagen)
+ 
+        detecciones = lb.sliding_window_localization_bayes(
+            imagen_tablero, modelo_bayes, extractor_bayes,
+            window_size=(100, 100), step=20, confidence_threshold=0.6,
+            norm_stats=norm_stats_bayes, pca=pca_bayes if redu else None
+        )
+ 
+        if detecciones:
+            mejor_deteccion = max(detecciones, key=lambda d: d['confidence'])
+            objeto_reconocido = mejor_deteccion['class']
+            posicion_pixeles = (mejor_deteccion['x'], mejor_deteccion['y'])
+            print(f"Objeto reconocido: {objeto_reconocido} en pixel {posicion_pixeles} "
+                  f"(confianza {mejor_deteccion['confidence']:.2%})")
+        else:
+            print("No se detecto ningun objeto en el tablero.")
+ 
+    elif modelo in (1, 3):
+        print("Ese modelo aun no esta integrado en este flujo (solo Naive Bayes por ahora).")
+    
