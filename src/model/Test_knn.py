@@ -93,6 +93,7 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
     
     # --- FILTRADO DE FONDO POR VARIANZA (SOLUCIÓN AL FONDO VERDE) ---
     detections_filtradas = []
+    
     for det in detections:
         x, y = det['x'], det['y']
         
@@ -114,7 +115,6 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
         # Si la ventana es muy homogénea (puro fondo gris liso), su desviación será muy baja.
         # Solo conservamos ventanas con texturas o cambios de color considerables (> 12.0)
         if desviacion[0][0] > 12.0:
-            detections_filtradas = det # Mantener solo las detecciones válidas
             detections_filtradas.append(det)
 
     print(f"Objetos reales post-filtrado de fondo: {len(detections_filtradas)}")
@@ -152,4 +152,3 @@ if __name__ == "__main__":
     
     probar_svm_en_imagen(model_svm, RUTA_IMAGEN_TABLERO, extractor, CONFIDENCE_THRESHOLD)
     print("PRUEBA COMPLETADA")
-
