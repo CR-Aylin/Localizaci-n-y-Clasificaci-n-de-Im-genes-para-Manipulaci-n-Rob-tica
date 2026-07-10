@@ -69,7 +69,7 @@ if __name__ == "__main__":
     #Aqui Colocar Algoritmos una vez funcionen
     modelo = int(input("Seleccione Modelo: "))
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano
-
+    
     match (modelo, redu):
         case (1, TRUE):
             print("KNN - PCA")
@@ -87,7 +87,4 @@ if __name__ == "__main__":
             print("Combinación no válida")
 
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
-#   #dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
-
-
-
+##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)

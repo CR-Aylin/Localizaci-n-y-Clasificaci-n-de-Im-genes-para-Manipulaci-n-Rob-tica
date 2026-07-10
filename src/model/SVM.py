@@ -1,48 +1,39 @@
-#ENTREnar
-#ARCHIVO CVS 
-#aLGORITMO
-#TEST
-#resive la ruta de una imagen x
-#PROCESO IMAGEN , GUARDAS EL VECTOR
-
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 
-
 class SVM:
-    """Clasificador SVM independiente (usa scikit-learn)"""
-    def __init__(self, kernel='rbf', C=1.0, gamma='scale'):
+
+    def __init__(self, kernel='rbf', C=1.0, gamma='scale'): #clasifica
         self.model = SVC(kernel=kernel, C=C, gamma=gamma, probability=False)
         
-    def fit(self, X, y):
-        """Entrena el modelo SVM."""
+    def fit(self, X, y): #Entrena
+
         self.model.fit(X, y)
         
     def predict(self, X):
-        """Predice las clases para un conjunto de datos."""
         return self.model.predict(X)
         
     def predict_with_distance(self, x):
         """
-        Predice la clase y calcula la distancia al vector de soporte más cercano.
-        Esta distancia se usa como métrica de confianza (menor = más confiable).
+        Predice la clase y calcula la distancia absoluta al hiperplano de decisión.
+        A mayor distancia, mayor es la certeza/confianza de la predicción.
         """
         x = np.array(x).reshape(1, -1)
         
-        # 1. Predecir la clase
         label = self.model.predict(x)[0]
         
-        # 2. Calcular distancia al vector de soporte más cercano
-        support_vectors = self.model.support_vectors_
-        distances = np.sqrt(np.sum((support_vectors - x)**2, axis=1))
-        min_dist = np.min(distances)
+        # 2. Calcular la distancia al hiperplano de decisión (Métrica de confianza real)
+        # decision_function devuelve un arreglo. Tomamos el valor absoluto del primer elemento.
+        # En clasificación multiclase, devuelve la distancia para cada combinación de clases (one-vs-one)
+        # por lo que tomamos la distancia máxima o promedio como métrica de certeza.
+        scores = self.model.decision_function(x)[0]
+        confidence_score = np.max(np.abs(scores)) 
         
-        return label, min_dist
+        return label, confidence_score
 
 
 class SVM_PCA:
-    """SVM con reducción dimensional PCA"""
     def __init__(self, n_components=50, kernel='rbf', C=1.0, gamma='scale'):
         self.pca = PCA(n_components=n_components)
         self.model = SVC(kernel=kernel, C=C, gamma=gamma, probability=False)
@@ -53,7 +44,7 @@ class SVM_PCA:
         
     def predict(self, X):
         X_reduced = self.pca.transform(X)
-        return self.model.predict(X)
+        return self.model.predict(X_reduced) 
         
     def predict_with_distance(self, x):
         x = np.array(x).reshape(1, -1)
@@ -61,29 +52,15 @@ class SVM_PCA:
         
         label = self.model.predict(x_reduced)[0]
         
-        support_vectors = self.model.support_vectors_
-        distances = np.sqrt(np.sum((support_vectors - x_reduced)**2, axis=1))
-        min_dist = np.min(distances)
+        #Calculado sobre el espacio transformado de PCA usando decision_function
+        scores = self.model.decision_function(x_reduced)[0]
+        confidence_score = np.max(np.abs(scores))
         
-        return label, min_dist
+        return label, confidence_score
 
 
-def sliding_window_localization_svm(board_image, model, extractor, 
-                                     window_size=(100, 100), step=20, dist_threshold=15.0):
-    """
-    Recorre el tablero con una ventana deslizante para localizar y clasificar objetos usando SVM.
-    
-    Parámetros:
-    - board_image: Imagen del tablero a analizar
-    - model: Modelo SVM (instancia de SVM o SVM_PCA)
-    - extractor: Extractor de características
-    - window_size: Tamaño de la ventana (ancho, alto)
-    - step: Paso del deslizamiento
-    - dist_threshold: Umbral de distancia para considerar que hay un objeto
-    
-    Retorna:
-    - Lista de detecciones con posición, clase y confianza
-    """
+def sliding_window_localization_svm(board_image, model, extractor, window_size=(100, 100), step=20, confidence_threshold=0.5):
+    """ ventana deslizante para localizar y clasificar objetos usando SVM."""
     h, w = board_image.shape[:2]
     detections = []
     
@@ -98,17 +75,21 @@ def sliding_window_localization_svm(board_image, model, extractor,
             if np.sum(features) == 0:
                 continue
             
-            # Predecir clase y distancia (confianza)
-            label, min_dist = model.predict_with_distance(features)
+            # Predecir clase y confianza (distancia al hiperplano)
+            label, confidence = model.predict_with_distance(features)
             
-            # Si la distancia es menor al umbral, consideramos que hay un objeto
-            if min_dist < dist_threshold:
+            # CORREGIDO: Al usar decision_function, buscamos que supere un umbral mínimo de certeza
+            if confidence > confidence_threshold:
                 detections.append({
                     'x': x + window_size[0]//2,
                     'y': y + window_size[1]//2,
                     'class': label,
-                    'confidence': 1.0 / (min_dist + 1e-6)
+                    'confidence': confidence
                 })
+    
+    # CORREGIDO: Ordenar detecciones de mayor a menor confianza para asegurar que el NMS
+    # conserve la ventana que mejor centrada está sobre el objeto.
+    detections = sorted(detections, key=lambda k: k['confidence'], reverse=True)
     
     # Eliminar detecciones duplicadas (Non-Maximum Suppression simple)
     final_detections = []

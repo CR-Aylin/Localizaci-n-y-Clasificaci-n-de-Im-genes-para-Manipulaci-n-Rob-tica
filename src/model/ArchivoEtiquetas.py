@@ -9,7 +9,7 @@ carpetas = [
     os.path.join("dataset", "Entrenamiento", "Class_3")
 ]
 
-Clases = ["Circulo", "Cuadrados", "Fondo"]
+Clases = ["Cuadrados","Circulo", "Fondo"]
 
 
 def crear_archivoEtiquetas():
