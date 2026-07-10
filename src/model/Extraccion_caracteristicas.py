@@ -113,7 +113,6 @@ class features_extractor:
         hist_v /= (hist_v.sum() + 1e-6)
         
         
-        imag_d = cv2.imread()
 
         visual_features = np.concatenate([hu_moments, hist_h, hist_s, hist_v])
 

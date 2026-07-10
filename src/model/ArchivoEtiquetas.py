@@ -1,6 +1,7 @@
 import os
 import cv2
 import pandas as pd
+import numpy as np
 
 import Extraccion_caracteristicas as ec
 
@@ -26,7 +27,7 @@ def sliding_window(arr, k):
 
     return ventanas
 
-def aplanar(self, img):
+def aplanar(img):
     """
     Recibe una imagen leída con cv2.imread() y devuelve un vector
     unidimensional con el promedio de los canales R y G.
