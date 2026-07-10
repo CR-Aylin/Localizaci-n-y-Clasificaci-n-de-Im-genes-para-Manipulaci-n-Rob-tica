@@ -9,19 +9,20 @@ carpetas = [
     os.path.join("dataset", "Entrenamiento", "Class_3")
 ]
 
-Clases = ["Cuadrados","Circulo", "Fondo"]
+Clases = ["Cuadrados", "Circulo", "Fondo"]
 
 
-def crear_archivoEtiquetas():
+def crear_archivoEtiquetas(hist_bins=16, chroma_threshold=12):
 
     datos = []
 
     columnas = [
         "imagen",
 
-        # Características geométricas
-        "area",
-        "perimetro",
+        # Características geométricas (solo invariantes a escala; se quitaron
+        # area, perimetro, x, y, ancho, alto porque no son invariantes a escala
+        # y confundían al clasificador entre fotos de entrenamiento y ventanas
+        # de test de tamaño fijo)
         "circularidad",
         "compacidad",
         "aspect_ratio",
@@ -35,20 +36,21 @@ def crear_archivoEtiquetas():
         *[f"hu_{i}" for i in range(1, 8)],
 
         # Histogramas HSV
-        *[f"H_{i}" for i in range(16)],
-        *[f"S_{i}" for i in range(16)],
-        *[f"V_{i}" for i in range(16)],
-
-        # Bounding Box
-        "x",
-        "y",
-        "ancho",
-        "alto",
+        *[f"H_{i}" for i in range(hist_bins)],
+        *[f"S_{i}" for i in range(hist_bins)],
+        *[f"V_{i}" for i in range(hist_bins)],
 
         # Clase
         "clase"
     ]
 
+    # Se crea UNA sola vez fuera del loop (antes se creaba por cada imagen,
+    # lo cual era innecesario ya que el extractor no guarda estado entre llamadas
+    # salvo su configuración).
+    extractor = ec.features_extractor(
+        hist_bins=hist_bins,
+        chroma_threshold=chroma_threshold
+    )
 
     for i, carpeta in enumerate(carpetas):
 
@@ -60,7 +62,6 @@ def crear_archivoEtiquetas():
             print(" La ruta no existe")
             continue
 
-
         for carpeta_actual, _, archivos in os.walk(carpeta):
 
             for archivo in archivos:
@@ -71,20 +72,21 @@ def crear_archivoEtiquetas():
                     ruta_completa = os.path.join(carpeta_actual, archivo)
 
                     print("Procesando:", ruta_completa)
-                    
-                    image = cv2.imread(ruta_completa)
-                    
-                    extractor = ec.features_extractor(hist_bins=16)
-                    vector_caracteristicas = extractor.extract(image)
 
+                    image = cv2.imread(ruta_completa)
+
+                    # Validar que la imagen se haya podido leer antes de procesarla
+                    if image is None:
+                        print("  ⚠ No se pudo leer la imagen, se omite")
+                        continue
+
+                    vector_caracteristicas = extractor.extract(image)
 
                     if vector_caracteristicas is None:
                         print("No se obtuvieron características")
                         continue
 
-
-                    print("Características obtenidas:",len(vector_caracteristicas))
-
+                    print("Características obtenidas:", len(vector_caracteristicas))
 
                     datos.append(
                         [ruta_completa] +
@@ -92,25 +94,19 @@ def crear_archivoEtiquetas():
                         [clase]
                     )
 
-
     print("\nTotal imágenes procesadas:", len(datos))
-
 
     if len(datos) == 0:
         print(" No hay datos para crear el CSV")
         return
 
-
     # Crear DataFrame
     df = pd.DataFrame(datos, columns=columnas)
-
 
     print("\nColumnas:", len(columnas))
     print("Datos:", df.shape)
 
-
     os.makedirs("dataset", exist_ok=True)
-
 
     df.to_csv(
         os.path.join("dataset", "dataset.csv"),
@@ -118,9 +114,9 @@ def crear_archivoEtiquetas():
         encoding="utf-8-sig"
     )
 
-
     print("\nDataset guardado correctamente")
     print(df.head())
 
 
-crear_archivoEtiquetas()
+if __name__ == "__main__":
+    crear_archivoEtiquetas()
