@@ -103,7 +103,7 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases,
         joblib.dump(knn, os.path.join(ruta_guardado, f"knn_{sufijo}.pkl"))
         if pca is not None:
             joblib.dump(pca, os.path.join(ruta_guardado, f"pca_{sufijo}.pkl"))
-        print(f"✅ Modelos guardados en: {ruta_guardado}/")
+        print(f"Modelos guardados en: {ruta_guardado}/")
     
     return {'knn': knn, 'scaler': scaler, 'pca': pca, 'accuracy': accuracy, 'f1': f1_macro}
 
@@ -114,10 +114,10 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
     """
     Aplica la ventana deslizante y dibuja los resultados en la imagen.
     """
-    print(f"\n🔍 Analizando imagen: {ruta_imagen}")
+    print(f"\nAnalizando imagen: {ruta_imagen}")
     img = cv2.imread(ruta_imagen)
     if img is None:
-        print("❌ Error al cargar la imagen.")
+        print("Error al cargar la imagen.")
         return
 
     # Usamos la función de tu archivo KNN.txt
@@ -133,6 +133,18 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
         step=20,
         dist_threshold=500 # Ajusta este umbral según tus pruebas
     )
+    # Para que imprima lo que detecta en pantalla
+    print(f"--- Resultados de Detección ({len(detections)} objetos encontrados) ---")
+    if not detections:
+        print("No se detectaron objetos con la confianza suficiente.")
+    else:
+        for i, det in enumerate(detections):
+            x, y = int(det['x']), int(det['y'])
+            label = det['class']
+            conf = det['confidence']
+            # Imprimir línea por línea para facilitar la lectura
+            print(f"  Deteccion #{i+1}: Clase='{label}' | Posicion=({x}, {y}) | Confianza={conf:.4f}")
+    print("-------------------------------------------------------")
 
     # Dibujar resultados
     img_result = img.copy()
@@ -153,7 +165,7 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
     plt.title(f"Detecciones Encontradas: {len(detections)}")
     plt.axis('off')
     plt.show()
-    print(f"✅ Se encontraron {len(detections)} objetos.")
+    print(f"Se encontraron {len(detections)} objetos.")
 
 # ============================================================
 # 4. SCRIPT PRINCIPAL
@@ -191,7 +203,7 @@ if __name__ == "__main__":
     mejor_modelo = res_sin_pca if res_sin_pca['accuracy'] >= res_con_pca['accuracy'] else res_con_pca
     tipo_modelo = "SIN PCA" if res_sin_pca['accuracy'] >= res_con_pca['accuracy'] else "CON PCA"
     
-    print(f"\n🚀 Usando modelo {tipo_modelo} para la prueba visual (Accuracy: {mejor_modelo['accuracy']*100:.2f}%)")
+    print(f"\nUsando modelo {tipo_modelo} para la prueba visual (Accuracy: {mejor_modelo['accuracy']*100:.2f}%)")
     
     probar_en_tablero(
         ruta_imagen=RUTA_TABLERO,
