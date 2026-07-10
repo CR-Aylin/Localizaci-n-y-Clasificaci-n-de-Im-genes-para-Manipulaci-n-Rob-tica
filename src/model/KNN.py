@@ -21,7 +21,6 @@ class KNN:
         k_labels = self.y_train[k_indices]
         return Counter(k_labels).most_common(1)[0][0]
 
-# Ventana Deslizante
     def predict_with_distance(self, x):
         x = np.array(x)
         distances = np.sqrt(np.sum((self.X_train - x)**2, axis=1))
@@ -32,11 +31,12 @@ class KNN:
         mean_dist = np.mean(k_distances)
         return label, mean_dist
 
-# Localización de Ventana Deslizante
-def sliding_window_localization(board_image, model, extractor, window_size=(100, 100), step=20, dist_threshold=500):
+# Localización de Ventana Deslizante (CORREGIDA)
+def sliding_window_localization(board_image, model, extractor, scaler, pca=None, window_size=(100, 100), step=20, dist_threshold=500):
     """
     Recorre el tablero con una ventana deslizante para localizar y clasificar objetos.
-    dist_threshold: Umbral de distancia euclidiana para considerar que hay un objeto y no fondo.
+    scaler: Objeto StandardScaler usado en el entrenamiento.
+    pca: Objeto PCA usado en el entrenamiento (opcional).
     """
     h, w = board_image.shape[:2]
     detections = []
@@ -45,15 +45,22 @@ def sliding_window_localization(board_image, model, extractor, window_size=(100,
         for x in range(0, w - window_size[0] + 1, step):
             window = board_image[y:y+window_size[1], x:x+window_size[0]]
 
-            # Extraer características de la ventana
+            # 1. Extraer características de la ventana
             features = extractor.extract(window)
 
-            # Si la ventana está vacía (fondo), el extractor retorna ceros y la distancia será alta
+            # Si la ventana está vacía (fondo), el extractor retorna ceros
             if np.sum(features) == 0:
                 continue
 
-            # Predecir clase y distancia (confianza)
-            label, mean_dist = model.predict_with_distance(features)
+            # 2. ESCALAR LAS CARACTERÍSTICAS (Obligatorio)
+            features_scaled = scaler.transform([features])
+            
+            # 3. APLICAR PCA SI SE USÓ EN EL ENTRENAMIENTO
+            if pca is not None:
+                features_scaled = pca.transform(features_scaled)
+
+            # 4. Predecir clase y distancia (confianza)
+            label, mean_dist = model.predict_with_distance(features_scaled[0])
 
             # Si la distancia es menor al umbral, consideramos que hay un objeto
             if mean_dist < dist_threshold:
@@ -61,7 +68,7 @@ def sliding_window_localization(board_image, model, extractor, window_size=(100,
                     'x': x + window_size[0]//2,
                     'y': y + window_size[1]//2,
                     'class': label,
-                    'confidence': 1.0 / (mean_dist + 1e-6) # Mayor confianza si la distancia es menor
+                    'confidence': 1.0 / (mean_dist + 1e-6)
                 })
 
     # Eliminar detecciones duplicadas 
