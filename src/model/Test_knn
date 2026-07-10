@@ -131,7 +131,7 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
         pca=pca,
         window_size=window_size,
         step=20,
-        dist_threshold=500 # Ajusta este umbral según tus pruebas
+        dist_threshold=10 # Ajusta este umbral según tus pruebas
     )
     # Para que imprima lo que detecta en pantalla
     print(f"--- Resultados de Detección ({len(detections)} objetos encontrados) ---")
