@@ -11,36 +11,19 @@ import src.robot.Calibracion as c
 import src.robot.camara as cama
 import src.model.Extraccion_caracteristicas as ec
 import src.robot.dobot_movement as dm
-#HI
+
 #modelos
 import src.model.KNN as knn
-import src.model.SVM as svm
+#import src.model.SVM as svm
 import src.model.Test_svm as svm 
-
+""" 
 #Modelo Naive Bayes
-import src.model.Entrenar_NaiveBayes as enb
+import src.model.Entrenar_Naive_Bayes as enb
 import src.model.Localizacion_Bayes as lb
 
-""" extractor = ec.features_extractor(hist_bins=16, debug=True)
-    vector_caracteristicas = extractor.extract(image)
 """
-def procesoImagen(ruta_completa):
-    image = cv2.imread(ruta_completa)
 
-    extractor = ec.features_extractor(hist_bins=16)
-    vector_caracteristicas = extractor.extract(image)
-    
-    return vector_caracteristicas
-    
-""" Se ve asi el vector de características final:
-    VECTOR = np.concatenate([
-    geom_features,
-    stat_features,
-    visual_features,
-    medidas])
-"""  
-
-def Ejemplo(ROBOTS):
+def Ejemplo(ROBOTS, offsetx, offsety):
     
     Npixel_x = 169
     Npixel_y = 381
@@ -51,7 +34,7 @@ def Ejemplo(ROBOTS):
 
 if __name__ == "__main__":
     #Arch.crear_archivoEtiquetas() #esta guardado no es necesario
-    
+    """ #descomentar con robot 
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
 
@@ -69,30 +52,33 @@ if __name__ == "__main__":
 
     print(f"Coordenadas Calculadas = {coor}")
     print(f"Coordenadas Actual = {pose} ")
-
+"""
     #Aqui Colocar Algoritmos una vez funcionen
     modelo = int(input("Seleccione Modelo: "))
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano
     
     match (modelo, redu):
-        case (1, TRUE):
+        case (1, True):
             print("KNN - PCA")
         case (1, False):
-            print("KNN - PCA")
-        case (2, TRUE):
+            print("KNN")
+        case (2, True):
             print("NaivesBayes - PCA")
         case (2, False):
-            print("NaivesBayes - LDA")
-        case (3, TRUE):
+            print("NaivesBayes")
+        case (3, True):
             print("SVM - PCA")
+            resultados = svm.ejecutar_deteccion_PCA()
         case (3, False):
-            print("SVM - LDA")
+            print("SVM")
+            resultados = svm.ejecutar_deteccion()
+
         case _:
             print("Combinación no válida")
 
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
 ##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
-
+""" 
 objeto_reconocido = None
     posicion_pixeles = None
  
@@ -133,4 +119,4 @@ objeto_reconocido = None
  
     elif modelo in (1, 3):
         print("Ese modelo aun no esta integrado en este flujo (solo Naive Bayes por ahora).")
-    
+"""    

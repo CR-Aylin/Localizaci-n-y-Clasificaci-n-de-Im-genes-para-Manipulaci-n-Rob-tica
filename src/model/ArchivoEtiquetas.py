@@ -1,7 +1,9 @@
 import os
 import cv2
 import pandas as pd
-import Extraccion_caracteristicas as ec
+
+from src.model import Extraccion_caracteristicas as ec
+
 
 carpetas = [
     os.path.join("dataset", "Entrenamiento", "Class_1"),

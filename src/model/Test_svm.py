@@ -4,15 +4,15 @@ import cv2
 import numpy as np
 import os
 import time
-from SVM import SVM, SVM_PCA, sliding_window_localization_svm
-from Extraccion_caracteristicas import features_extractor
+from src.model.SVM import SVM, SVM_PCA, sliding_window_localization_svm
+from src.model import Extraccion_caracteristicas as ec
 
 
 def cargar_dataset(ruta_dataset):
     X = []
     y = []
 
-    extractor = features_extractor(hist_bins=16, debug=False)
+    extractor = ec.features_extractor(hist_bins=16, debug=False)
 
     if not os.path.isdir(ruta_dataset):
         raise NotADirectoryError(f"La ruta especificada no es un directorio válido: {ruta_dataset}")
@@ -196,7 +196,7 @@ def ejecutar_deteccion(
 
     # Se entrena con la CARPETA del dataset completo, no con una imagen suelta
     model_svm, X_train, y_train = entrenar_svm(ruta_dataset, usar_pca=usar_pca)
-    extractor = features_extractor(hist_bins=hist_bins, debug=False)
+    extractor = ec.features_extractor(hist_bins=hist_bins, debug=False)
 
     resultados = probar_svm_en_imagen(
         model_svm,
@@ -248,7 +248,7 @@ def ejecutar_deteccion_PCA(
         n_components=n_components
     )
 
-    extractor = features_extractor(
+    extractor = ec.features_extractor(
         hist_bins=hist_bins,
         debug=False
     )
