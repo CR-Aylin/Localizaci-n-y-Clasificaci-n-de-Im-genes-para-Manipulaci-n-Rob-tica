@@ -158,7 +158,7 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases,
 if __name__ == "__main__":
     # --- CONFIGURACIÓN ---
     # 🔧 AJUSTA ESTA RUTA a tu carpeta de entrenamiento (la que tiene subcarpetas de clases)
-    RUTA_DATASET = r"P:\IA - JAR\Localización y Clasificación de Imágenes para Manipulación Robótica\dataset\Entrenamiento"
+    RUTA_DATASET = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\Entrenamiento")
     
     TEST_SIZE = 0.2
     RANDOM_SEED = 42
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     print("="*60)
     
     # 🔧 AJUSTA ESTA RUTA a tu imagen del tablero
-    RUTA_TABLERO = r"P:\IA - JAR\Localización y Clasificación de Imágenes para Manipulación Robótica\dataset\WIN_20260702_19_15_01_Pro.jpg"
+    RUTA_TABLERO = ("C:\\Users\\josep\\OneDrive\\Documentos\\GitHub\\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\\dataset\\Test\\WIN_20260702_17_07_52_Pro.jpg")
     
     if os.path.exists(RUTA_TABLERO):
         # Cargar el modelo SIN PCA (o el que mejor accuracy tenga)
@@ -257,7 +257,3 @@ if __name__ == "__main__":
         print(f"⚠️  Ruta del tablero no encontrada: {RUTA_TABLERO}")
     
     print("\n✅ Proceso completado.")
-
-"""
-hola
-"""
