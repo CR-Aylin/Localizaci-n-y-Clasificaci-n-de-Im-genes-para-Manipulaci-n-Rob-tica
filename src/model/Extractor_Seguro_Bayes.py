@@ -95,7 +95,29 @@ class ExtractorSeguro:
         except Exception as e:
             print(f"Error encontrando contorno: {e}")
             return None
-        
+
+
+    def aplanar(self, img):
+        """
+        Recibe una imagen leída con cv2.imread() y devuelve un vector
+        unidimensional con el promedio de los canales R y G.
+        """
+
+        # Convertir de BGR a RGB
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        # Separar canales
+        R = rgb[:, :, 0].astype(np.float32)
+        G = rgb[:, :, 1].astype(np.float32)
+        B = rgb[:, :, 2].astype(np.float32)
+
+        # Promedio de R y G y B
+        promedio = (R + G + B) / 3.0
+
+        # Convertir a vector unidimensional
+        return promedio.flatten()
+
+
     def extraer_objetos(self, imagen):
         """
         Devuelve todos los objetos encontrados con sus características.
@@ -103,6 +125,8 @@ class ExtractorSeguro:
         resultados = []
 
         lab = cv2.cvtColor(imagen, cv2.COLOR_BGR2LAB)
+        aplanada = self.aplanar(imagen)
+        #lab = imagen
 
         a = lab[:, :, 1].astype(np.float32) - 128
         b = lab[:, :, 2].astype(np.float32) - 128
@@ -142,7 +166,7 @@ class ExtractorSeguro:
             hu = cv2.HuMoments(momentos).flatten()
             hu = -np.sign(hu)*np.log10(np.abs(hu)+1e-7)
 
-            features = np.concatenate((hist_h,hist_s,hist_v,hu))
+            features = np.concatenate((aplanada, hist_h,hist_s,hist_v,hu)) #Asignar imagen como ramo
 
             resultados.append((contorno,features))
 

@@ -44,7 +44,7 @@ if __name__ == "__main__":
     #descomentar con robot 
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
-
+    
     cam = cama.Cam()
     resultados = cam.sacar_foto("Prueba1")
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     pixel_x, pixel_y, = resultados["referencia"]
     pose = ROBOTS.pose()
     robot_x, robot_y = pose[0] , pose[1]
-
+#hello
     coor , offsetx , offsety  = c.coordernadas_n(pixel_x, pixel_y, robot_x, robot_y)
     pose = ROBOTS.pose()
 
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     match (modelo, redu):
         case (1, True):
             print("KNN - PCA")
-            resultados = tk.ejecutar_knn_con_pca(ruta)
+            re = tk.ejecutar_knn_con_pca(ruta)
 
-            Cuad = resultados[np.str_('Class_2')]
-            Cir = resultados[np.str_('Class_1')]
+            Cuad = re[np.str_('Class_2')]
+            Cir = re[np.str_('Class_1')]
 
             coorCuad = obtener_centro(Cuad)  
             coorCir = obtener_centro(Cir)    
@@ -139,7 +139,7 @@ if __name__ == "__main__":
                 mostrar=True,
                 ruta_salida="salida/resultado_sin_pca.jpg"
             )
-            Cuad,Cir = resultados
+            
             coorCir = Cir["centro"]
             coorCuad = Cuad['centro']
             
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                                 confidence_threshold=0.65,
                                 n_components=50
                             )
-            Cuad,Cir = resultados
+            
             coorCir = [Cir['x'], Cir['y']]
             coorCuad = [Cuad['x'], Cuad['y']]
         case (3, False):
@@ -168,7 +168,11 @@ if __name__ == "__main__":
         case _:
             print("Combinación no válida")
 
-#print(f"Coordenadas Circulo = {coorCir}")
-#print(f"Coordenadas Cuadrado = {coorCuad}")
+print(f"Coordenadas Circulo = {coorCir}")
+print(f"Coordenadas Cuadrado = {coorCuad}")
+
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
-##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
+#dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2) 135, 112 #posiciones en espejo
+
+ROBOTS.move_to(135, 112,50,50, wait=True)
+print("FFFF")

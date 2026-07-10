@@ -2,7 +2,7 @@ import os
 import cv2
 import pandas as pd
 
-import src.model.Extraccion_caracteristicas as ec
+import Extraccion_caracteristicas as ec
 
 
 carpetas = [
@@ -12,6 +12,39 @@ carpetas = [
 ]
 
 Clases = ["Cuadrados", "Circulo", "Fondo"]
+
+def sliding_window(arr, k):
+    n = len(arr)
+
+    if k > n or k <= 0:
+        return []
+
+    ventanas = []
+
+    for i in range(n - k + 1):
+        ventanas.append(arr[i:i + k])
+
+    return ventanas
+
+def aplanar(self, img):
+    """
+    Recibe una imagen leída con cv2.imread() y devuelve un vector
+    unidimensional con el promedio de los canales R y G.
+    """
+
+    # Convertir de BGR a RGB
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Separar canales
+    R = rgb[:, :, 0].astype(np.float32)
+    G = rgb[:, :, 1].astype(np.float32)
+    B = rgb[:, :, 2].astype(np.float32)
+
+    # Promedio de R y G y B
+    promedio = (R + G + B) / 3.0
+
+    # Convertir a vector unidimensional
+    return promedio.flatten()
 
 
 def crear_archivoEtiquetas(hist_bins=16, chroma_threshold=12):
@@ -46,13 +79,6 @@ def crear_archivoEtiquetas(hist_bins=16, chroma_threshold=12):
         "clase"
     ]
 
-    # Se crea UNA sola vez fuera del loop (antes se creaba por cada imagen,
-    # lo cual era innecesario ya que el extractor no guarda estado entre llamadas
-    # salvo su configuración).
-    extractor = ec.features_extractor(
-        hist_bins=hist_bins,
-        chroma_threshold=chroma_threshold
-    )
 
     for i, carpeta in enumerate(carpetas):
 
@@ -76,25 +102,37 @@ def crear_archivoEtiquetas(hist_bins=16, chroma_threshold=12):
                     print("Procesando:", ruta_completa)
 
                     image = cv2.imread(ruta_completa)
+                    #
+                    P_imagen = aplanar(image)
+
+                    ventanas = sliding_window(image, 64)
+                    
+                    for ventana  in ventanas:
+                        
+                        extractor = ec.features_extractor(
+                            hist_bins=hist_bins,
+                            chroma_threshold=chroma_threshold
+                        )
+                        vector_caracteristicas = extractor.extract(ventana)
+
+                        if vector_caracteristicas is None:
+                            print("No se obtuvieron características")
+                            continue
+
+                        print("Características obtenidas:", len(vector_caracteristicas))
+
+                        datos.append(
+                            [P_imagen] +
+                            list(vector_caracteristicas) +
+                            [clase]
+                        )
 
                     # Validar que la imagen se haya podido leer antes de procesarla
                     if image is None:
                         print("  ⚠ No se pudo leer la imagen, se omite")
                         continue
 
-                    vector_caracteristicas = extractor.extract(image)
 
-                    if vector_caracteristicas is None:
-                        print("No se obtuvieron características")
-                        continue
-
-                    print("Características obtenidas:", len(vector_caracteristicas))
-
-                    datos.append(
-                        [ruta_completa] +
-                        list(vector_caracteristicas) +
-                        [clase]
-                    )
 
     print("\nTotal imágenes procesadas:", len(datos))
 

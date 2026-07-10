@@ -5,9 +5,9 @@ from collections import Counter
 import cv2
 import numpy as np
 
-from src.model.Extractor_Seguro_Bayes import ExtractorSeguro
-from src.model.NaiveBayes import NaiveBayes
-from src.model.PCA_Bayes import PCA
+from Extractor_Seguro_Bayes import ExtractorSeguro
+from NaiveBayes import NaiveBayes
+from PCA_Bayes import PCA
 
 CLASES = ["Class_1", "Class_2", "Class_3"]
 
@@ -371,7 +371,7 @@ def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianz
 
     return entrenar_modelo_final(X, y, extractor, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
 
-"""
+
 
 if __name__ == "__main__":
 
@@ -446,4 +446,3 @@ if __name__ == "__main__":
         ruta_salida="salida/resultado_con_pca.jpg"
     )
 
-"""

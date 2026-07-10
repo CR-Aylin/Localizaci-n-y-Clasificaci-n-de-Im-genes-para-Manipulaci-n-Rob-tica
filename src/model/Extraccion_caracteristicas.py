@@ -111,6 +111,9 @@ class features_extractor:
         hist_h /= (hist_h.sum() + 1e-6)
         hist_s /= (hist_s.sum() + 1e-6)
         hist_v /= (hist_v.sum() + 1e-6)
+        
+        
+        imag_d = cv2.imread()
 
         visual_features = np.concatenate([hu_moments, hist_h, hist_s, hist_v])
 
@@ -153,6 +156,25 @@ class features_extractor:
                 cv2.rectangle(img, (x, y), (x + ancho, y + alto), (0, 255, 0), 2)
 
         return np.array([x, y, ancho, alto], dtype=np.float32)
+    
+    def extraer_caracteristicas(img):
+        """
+        Recibe una imagen leída con cv2.imread() y devuelve un vector
+        unidimensional con el promedio de los canales R y G.
+        """
+
+        # Convertir de BGR a RGB
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        # Separar canales
+        R = rgb[:, :, 0].astype(np.float32)
+        G = rgb[:, :, 1].astype(np.float32)
+
+        # Promedio de R y G
+        promedio = (R + G) / 2.0
+
+        # Convertir a vector unidimensional
+        return promedio.flatten()
 
     def show_processed_images(self, original, gray, mask, contour, image_bgr):
         """Muestra las imágenes procesadas en diferentes etapas"""
