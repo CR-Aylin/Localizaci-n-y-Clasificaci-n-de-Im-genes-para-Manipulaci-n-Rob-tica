@@ -9,7 +9,7 @@ from Extractor_Seguro_Bayes import ExtractorSeguro
 from NaiveBayes import NaiveBayes
 from PCA_Bayes import PCA
 
-CLASES = ["Circulo", "Poligonos", "Fondo"]
+CLASES = ["Class_1", "Class_2", "Class_3"]
 
 
 def cargar_dataset_desde_carpetas(ruta_base, extractor=None):
@@ -29,6 +29,9 @@ def cargar_dataset_desde_carpetas(ruta_base, extractor=None):
 
     X_bruto, y_bruto = [], []
     descartadas = 0
+
+    print("Ruta base:", os.path.abspath(ruta_base))
+    print("Existe:", os.path.exists(ruta_base))
 
     for clase in CLASES:
         ruta_clase = os.path.join(ruta_base, clase)
@@ -76,8 +79,7 @@ def cargar_dataset_desde_carpetas(ruta_base, extractor=None):
         else:
             descartadas += 1
 
-    print(f"\nVectores usados: {len(X)} (largo={largo_esperado}) | "
-          f"Descartados por inconsistencia/errores: {descartadas}")
+    print(f"\nVectores usados: {len(X)} (largo={largo_esperado}) | "f"Descartados por inconsistencia/errores: {descartadas}")
 
     return np.array(X, dtype=float), np.array(y)
 
@@ -237,17 +239,27 @@ def evaluar_cross_validation(X, y, k=5, usar_pca=False, varianza_objetivo=0.95):
     return exactitudes
 
 
-def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianza_objetivo=0.95):
-    extractor = ExtractorSeguro()
+def cargar_y_describir_dataset(ruta_dataset, extractor=None):
+    """
+    Carga el dataset desde carpetas y muestra un resumen básico
+    (cantidad de muestras, dimensionalidad y clases presentes).
+    """
+    if extractor is None:
+        extractor = ExtractorSeguro()
+
     X, y = cargar_dataset_desde_carpetas(ruta_dataset, extractor)
 
     print(f"\nDataset: {X.shape[0]} muestras, {X.shape[1]} características")
     print(f"Clases presentes: {sorted(set(y))}")
 
-    evaluar_holdout(X, y, test_size=test_size, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
-    evaluar_cross_validation(X, y, k=k, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
+    return X, y, extractor
 
-    # Modelo final entrenado con todo el dataset, listo para usar en localización
+
+def entrenar_modelo_final(X, y, extractor, usar_pca=False, varianza_objetivo=0.95):
+    """
+    Entrena el modelo final con TODO el dataset (sin split), listo para
+    usar en producción / localización. No evalúa ni imprime métricas.
+    """
     medias = X.mean(axis=0)
     stds = X.std(axis=0)
     stds[stds == 0] = 1e-9
@@ -266,9 +278,93 @@ def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianz
     return modelo_final, extractor, norm_stats, pca_final
 
 
+def evaluar_modelo(X, y, test_size=0.2, k=5, usar_pca=False, varianza_objetivo=0.95):
+    """
+    Evalúa el desempeño del modelo (hold-out + validación cruzada) sin
+    entrenar el modelo final. Solo imprime métricas/resultados.
+    """
+    evaluar_holdout(X, y, test_size=test_size, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
+    evaluar_cross_validation(X, y, k=k, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
+
+
+def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
+                   mostrar=True, ruta_salida=None):
+
+    if isinstance(imagen,str):
+        imagen=cv2.imread(imagen)
+
+    salida=imagen.copy()
+
+    objetos=extractor.extraer_objetos(imagen)
+
+    if len(objetos)==0:
+        print("No se encontraron objetos")
+        return
+
+    for contorno,features in objetos:
+
+        features=np.asarray(features,dtype=float)
+
+        features=(features-norm_stats["medias"])/norm_stats["stds"]
+
+        if pca is not None:
+            features=pca.transform(features.reshape(1,-1))[0]
+
+        clase,confianza=modelo.predict_with_confidence(features)
+
+        x,y,w,h=cv2.boundingRect(contorno)
+
+        cv2.drawContours(salida,[contorno],-1,(0,255,0),2)
+
+        cv2.rectangle(salida,(x,y),(x+w,y+h),(255,0,0),2)
+
+        cv2.putText(salida,
+                    f"{clase} ({confianza*100:.1f}%)",
+                    (x,y-10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0,0,255),
+                    2)
+
+        print(clase,confianza)
+
+    if ruta_salida is not None:
+        cv2.imwrite(ruta_salida,salida)
+
+    if mostrar:
+        cv2.imshow("Deteccion",salida)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianza_objetivo=0.95):
+    """
+    Mantiene el comportamiento original: carga el dataset, evalúa el
+    modelo y luego entrena el modelo final con todo el dataset.
+    Internamente ahora usa las funciones separadas.
+    """
+    X, y, extractor = cargar_y_describir_dataset(ruta_dataset)
+
+    evaluar_modelo(X, y, test_size=test_size, k=k, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
+
+    return entrenar_modelo_final(X, y, extractor, usar_pca=usar_pca, varianza_objetivo=varianza_objetivo)
+
+
 if __name__ == "__main__":
+    # --- Ejemplo usando las funciones separadas ---
+
+    # 1. Cargar el dataset una sola vez
+    X, y, extractor = cargar_y_describir_dataset(ruta_dataset="dataset//Entrenamiento")
+
     print("\n\n########## SIN PCA ##########")
-    entrenar_y_evaluar(ruta_dataset="dataset_imagenes", usar_pca=False)
+    evaluar_modelo(X, y, usar_pca=False)
+    modelo, extractor, norm_stats, pca = entrenar_modelo_final(X, y, extractor, usar_pca=False)
 
     print("\n\n########## CON PCA ##########")
-    entrenar_y_evaluar(ruta_dataset="dataset_imagenes", usar_pca=True, varianza_objetivo=0.95)
+    evaluar_modelo(X, y, usar_pca=True, varianza_objetivo=0.95)
+    modelo_pca, extractor, norm_stats_pca, pca = entrenar_modelo_final(
+        X, y, extractor, usar_pca=True, varianza_objetivo=0.95
+    )
+
+    # --- Ejemplo: clasificar una imagen nueva con el modelo (sin PCA) ---
+    ruta_imagen_tablero=r"dataset\prueba1\ala.jpg"
+    evaluar_imagen(ruta_imagen_tablero, modelo, extractor, norm_stats)

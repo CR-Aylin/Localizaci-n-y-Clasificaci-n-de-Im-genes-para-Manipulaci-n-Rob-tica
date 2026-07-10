@@ -1,5 +1,7 @@
 import numpy as np
+import cv2
 from NaiveBayes import NaiveBayes
+from Entrenar_Naive_Bayes import cargar_y_describir_dataset, entrenar_modelo_final
 
 
 # Localización de Ventana Deslizante con Naive Bayes (3 clases: Circulo, Poligonos, Fondo)
@@ -87,25 +89,65 @@ def sliding_window_localization_bayes(board_image, model, extractor,
 
     return final_detections
 
+
+def ejecutar_deteccion(imagen, modelo, extractor, norm_stats=None, pca=None,
+                        window_size=(100, 100), step=20,
+                        confidence_threshold=0.6, clase_fondo="Fondo"):
+    """
+    Ejecuta la localización por ventana deslizante sobre una imagen y
+    devuelve, para cada objeto detectado, solo lo esencial: su clase y su
+    posición (x, y) en la imagen.
+
+    imagen: numpy array BGR (o ruta a un archivo, se acepta por comodidad).
+    modelo: instancia de NaiveBayes ya entrenada.
+    extractor: mismo extractor usado en el entrenamiento.
+    norm_stats: dict {"medias": ..., "stds": ...} usado al entrenar
+        (obligatorio si el modelo se entrenó con datos normalizados).
+    pca: instancia de PCA ya ajustada, o None si no se usó PCA.
+
+    Devuelve una lista de tuplas (clase, (x, y)), ordenada de mayor a
+    menor confianza. Si no se detecta nada, devuelve una lista vacía.
+    """
+    if isinstance(imagen, str):
+        import cv2
+        imagen_cargada = cv2.imread(imagen)
+        if imagen_cargada is None:
+            print("  [ejecutar_deteccion] no se pudo leer la imagen.")
+            return []
+        imagen = imagen_cargada
+
+    detecciones = sliding_window_localization_bayes(
+        imagen, modelo, extractor,
+        window_size=window_size, step=step,
+        confidence_threshold=confidence_threshold,
+        clase_fondo=clase_fondo,
+        norm_stats=norm_stats, pca=pca
+    )
+
+    # Ordenar de mayor a menor confianza para que el resultado sea consistente
+    detecciones_ordenadas = sorted(detecciones, key=lambda d: d['confidence'], reverse=True)
+
+    resultado = [(d['class'], (d['x'], d['y'])) for d in detecciones_ordenadas]
+
+    if not resultado:
+        print("No se detectaron objetos.")
+    else:
+        for clase, (x, y) in resultado:
+            print(f"Detectado: {clase} en posición ({x}, {y})")
+
+    return resultado
+
 #Posible uso
 if __name__ == "__main__":
-    # Ejemplo de uso:
-    #
-    # from extractor_seguro_bayes import SafeFeaturesExtractor
-    # from entrenar_naive_bayes import entrenar_y_evaluar
-    # import cv2
-    #
-    # modelo, _, _ = entrenar_y_evaluar(ruta_dataset="dataset_imagenes")
-    # extractor = SafeFeaturesExtractor()  # mismo extractor usado en el entrenamiento
-    # tablero = cv2.imread("tablero.jpg")
-    #
-    # detecciones = sliding_window_localization_bayes(
-    #     tablero, modelo, extractor,
-    #     window_size=(100, 100), step=20, confidence_threshold=0.6
-    # )
-    # for d in detecciones:
-    #     print(d)
+    ruta_dataset = r"dataset\Entrenamiento"
+    ruta_imagen_tablero = r"dataset\prueba1\ala.jpg"
 
+    X, y, extractor = cargar_y_describir_dataset(ruta_dataset)
+    modelo, extractor, norm_stats, pca = entrenar_modelo_final(X, y, extractor, usar_pca=False)
 
-    
-    pass
+    resultado = ejecutar_deteccion(
+        ruta_imagen_tablero, modelo, extractor,
+        norm_stats=norm_stats, pca=pca,
+        window_size=(100, 100), step=20, confidence_threshold=0.6
+    )
+    # resultado -> [("Circulo", (140, 260)), ("Poligonos", (320, 180)), ...]

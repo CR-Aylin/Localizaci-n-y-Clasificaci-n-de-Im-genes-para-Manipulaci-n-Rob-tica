@@ -2,7 +2,7 @@ import os
 import cv2
 import pandas as pd
 
-from src.model import Extraccion_caracteristicas as ec
+import Extraccion_caracteristicas as ec
 
 
 carpetas = [
