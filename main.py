@@ -69,13 +69,21 @@ if __name__ == "__main__":
         case (3, True):
             print("SVM - PCA")
             resultados = svm.ejecutar_deteccion_PCA()
+            Cuad,Cir = resultados
+            coorCir = [Cir['x'], Cir['y']]
+            coorCuad = [Cuad['x'], Cuad['y']]
         case (3, False):
             print("SVM")
             resultados = svm.ejecutar_deteccion()
+            Cuad,Cir = resultados
+            coorCir = [Cir['x'], Cir['y']]
+            coorCuad = [Cuad['x'], Cuad['y']]
 
         case _:
             print("Combinación no válida")
 
+print(f"Coordenadas Circulo = {coorCir}")
+print(f"Coordenadas Cuadrado = {coorCuad}")
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
 ##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
 """ 
