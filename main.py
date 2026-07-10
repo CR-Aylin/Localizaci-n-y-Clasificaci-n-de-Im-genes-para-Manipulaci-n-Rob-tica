@@ -11,7 +11,7 @@ import src.robot.Calibracion as c
 import src.robot.camara as cama
 import src.model.Extraccion_caracteristicas as ec
 import src.robot.dobot_movement as dm
-
+#HI
 #modelos
 import src.model.KNN as knn
 import src.model.SVM as svm

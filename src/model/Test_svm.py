@@ -114,7 +114,6 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
         # Si la ventana es muy homogénea (puro fondo gris liso), su desviación será muy baja.
         # Solo conservamos ventanas con texturas o cambios de color considerables (> 12.0)
         if desviacion[0][0] > 12.0:
-            detections_filtradas = det # Mantener solo las detecciones válidas
             detections_filtradas.append(det)
 
     print(f"Objetos reales post-filtrado de fondo: {len(detections_filtradas)}")
@@ -141,10 +140,10 @@ def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5
 
 if __name__ == "__main__":
     
-    RUTA_DATASET = r"C:\Users\alumno\Documents\GitHub\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\dataset\Entrenamiento"
+    RUTA_DATASET = r"dataset\Entrenamiento"
     
 
-    RUTA_IMAGEN_TABLERO = r"C:\Users\alumno\Documents\GitHub\Localizaci-n-y-Clasificaci-n-de-Im-genes-para-Manipulaci-n-Rob-tica\dataset\prueba1\ala.jpg"
+    RUTA_IMAGEN_TABLERO = r"dataset\prueba1\ala.jpg"
 
     model_svm, X_train, y_train = entrenar_svm(RUTA_DATASET, usar_pca=False)
     extractor = features_extractor(hist_bins=16, debug=False)
