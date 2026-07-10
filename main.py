@@ -61,6 +61,28 @@ if __name__ == "__main__":
             print("KNN - PCA")
         case (1, False):
             print("KNN")
+            X, y, extractor = knn.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
+            knn.evaluar_modelo(X, y, usar_pca=False)
+
+            modelo, extractor, norm_stats, pca = knn.entrenar_modelo_final(
+                X,
+                y,
+                extractor,
+                usar_pca=False
+            )
+            resultados = knn.evaluar_imagen(
+                ruta,
+                modelo,
+                extractor,
+                norm_stats,
+                pca=None,
+                mostrar=True,
+                ruta_salida="salida/resultado_knn_sin_pca.jpg"
+            )
+            
+            Cuad, Cir = resultados
+            coorCir = Cir["centro"]
+            coorCuad = Cuad['centro']
         case (2, True):
             print("NaivesBayes - PCA")
             X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
