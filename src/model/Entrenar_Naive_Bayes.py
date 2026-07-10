@@ -314,9 +314,21 @@ def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
 
         x,y,w,h=cv2.boundingRect(contorno)
 
+        cx = x + w // 2
+        cy = y + h // 2
+
         cv2.drawContours(salida,[contorno],-1,(0,255,0),2)
 
-        cv2.rectangle(salida,(x,y),(x+w,y+h),(255,0,0),2)
+        #cv2.rectangle(salida,(x,y),(x+w,y+h),(255,0,0),2)
+        cv2.circle(salida, (cx, cy), 4, (0,255,255), -1)
+
+        cv2.putText(salida,
+                    f"({cx}, {cy})",
+                    (x, y+h+20),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (255,255,0),
+                    2)
 
         cv2.putText(salida,
                     f"{clase} ({confianza*100:.1f}%)",
@@ -326,7 +338,9 @@ def evaluar_imagen(imagen, modelo, extractor, norm_stats, pca=None,
                     (0,0,255),
                     2)
 
-        print(clase,confianza)
+        print(f"Clase: {clase}")
+        print(f"Confianza: {confianza:.2%}")
+        print(f"Centro: ({cx}, {cy})")
 
     if ruta_salida is not None:
         cv2.imwrite(ruta_salida,salida)
@@ -350,21 +364,78 @@ def entrenar_y_evaluar(ruta_dataset, test_size=0.2, k=5, usar_pca=False, varianz
 
 
 if __name__ == "__main__":
-    # --- Ejemplo usando las funciones separadas ---
 
-    # 1. Cargar el dataset una sola vez
-    X, y, extractor = cargar_y_describir_dataset(ruta_dataset="dataset//Entrenamiento")
 
-    print("\n\n########## SIN PCA ##########")
-    evaluar_modelo(X, y, usar_pca=False)
-    modelo, extractor, norm_stats, pca = entrenar_modelo_final(X, y, extractor, usar_pca=False)
-
-    print("\n\n########## CON PCA ##########")
-    evaluar_modelo(X, y, usar_pca=True, varianza_objetivo=0.95)
-    modelo_pca, extractor, norm_stats_pca, pca = entrenar_modelo_final(
-        X, y, extractor, usar_pca=True, varianza_objetivo=0.95
+    # ============================
+    # Cargar dataset una sola vez
+    # ============================
+    X, y, extractor = cargar_y_describir_dataset(
+        ruta_dataset="dataset/Entrenamiento"
     )
 
-    # --- Ejemplo: clasificar una imagen nueva con el modelo (sin PCA) ---
-    ruta_imagen_tablero=r"dataset\prueba1\ala.jpg"
-    evaluar_imagen(ruta_imagen_tablero, modelo, extractor, norm_stats)
+    # ======================================
+    # MODELO SIN PCA
+    # ======================================
+    print("\n========== MODELO SIN PCA ==========")
+
+    evaluar_modelo(X, y, usar_pca=False)
+
+    modelo, extractor, norm_stats, pca = entrenar_modelo_final(
+        X,
+        y,
+        extractor,
+        usar_pca=False
+    )
+
+    # ======================================
+    # MODELO CON PCA
+    # ======================================
+    print("\n========== MODELO CON PCA ==========")
+
+    evaluar_modelo(
+        X,
+        y,
+        usar_pca=True,
+        varianza_objetivo=0.95
+    )
+
+    modelo_pca, extractor, norm_stats_pca, pca_modelo = entrenar_modelo_final(
+        X,
+        y,
+        extractor,
+        usar_pca=True,
+        varianza_objetivo=0.95
+    )
+
+    # Imagen a evaluar
+    ruta = r"dataset\prueba1\ala.jpg"
+
+    # ======================================
+    # Evaluar SIN PCA
+    # ======================================
+    print("\nEvaluando imagen SIN PCA...\n")
+
+    evaluar_imagen(
+        ruta,
+        modelo,
+        extractor,
+        norm_stats,
+        pca=None,
+        mostrar=True,
+        ruta_salida="salida/resultado_sin_pca.jpg"
+    )
+
+    # ======================================
+    # Evaluar CON PCA
+    # ======================================
+    print("\nEvaluando imagen CON PCA...\n")
+
+    evaluar_imagen(
+        ruta,
+        modelo_pca,
+        extractor,
+        norm_stats_pca,
+        pca=pca_modelo,
+        mostrar=True,
+        ruta_salida="salida/resultado_con_pca.jpg"
+    )
