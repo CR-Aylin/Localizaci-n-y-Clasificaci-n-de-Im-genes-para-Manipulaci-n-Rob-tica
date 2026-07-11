@@ -42,6 +42,7 @@ def Ejemplo(ROBOTS, offsetx, offsety):
 if __name__ == "__main__":
     #Arch.crear_archivoEtiquetas() #esta guardado no es necesario
     #descomentar con robot 
+    """
     ROBOTS = dm.conectar() #inicia
     dm.Home(ROBOTS)
 
@@ -61,11 +62,15 @@ if __name__ == "__main__":
     print(f"Coordenadas Actual = {pose} ")
 
     #Aqui Colocar Algoritmos una vez funcionen
-    modelo = int(input("Seleccione Modelo: "))
-    redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
+ 
 
     ruta = resultados['ruta'] #'ruta': 'dataset\\Pruebas\\Prueba1.png'
+
+    """ 
     ruta_dataset=r"dataset/Entrenamiento"
+
+    modelo = int(input("Seleccione Modelo: "))
+    redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
 
     match (modelo, redu):
         case (1, True):

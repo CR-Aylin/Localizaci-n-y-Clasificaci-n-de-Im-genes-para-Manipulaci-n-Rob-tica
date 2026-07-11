@@ -23,6 +23,15 @@ class features_extractor:
         # con la escala de las fotos de entrenamiento, sin importar la clase real.
         return 3 + 3 + 7 + (3 * self.hist_bins)
 
+    def sliding_window(self, image, window_size=(100, 100), step_size=50):
+        h, w = image.shape[:2]
+        win_h, win_w = window_size
+        
+        for y in range(0, h - win_h + 1, step_size):
+            for x in range(0, w - win_w + 1, step_size):
+                window = image[y:y+win_h, x:x+win_w]
+                yield (x, y, window)
+
     def extract(self, image, return_bbox=False):
         if self.debug:
             original = image.copy()
@@ -133,6 +142,21 @@ class features_extractor:
             return VECTOR, (bbox_x, bbox_y, bbox_w, bbox_h)
 
         return VECTOR
+
+    def extract_d(self, image, window_size=(100, 100), step_size=50, min_object_area=50):
+        detections = []
+        
+        for x, y, window in self.sliding_window(image, window_size, step_size):
+            # Extraer características de esta ventana
+            features, bbox = self.extract(window, return_bbox=True)
+            
+            # Verificar si se detectó un objeto (features no son todos ceros)
+            if not np.all(features == 0):
+                # Ajustar bbox a coordenadas globales de la imagen
+                global_bbox = (x + bbox[0], y + bbox[1], bbox[2], bbox[3])
+                detections.append((x, y, features, global_bbox))
+        
+        return detections
 
     def largo_ancho(self, img, cnt):
         """
