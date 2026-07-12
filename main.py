@@ -77,8 +77,8 @@ if __name__ == "__main__":
             print("KNN - PCA")
             resultados = tk.ejecutar_knn_con_pca(ruta)
 
-            Cuad = resultados[np.str_('Class_2')]
-            Cir = resultados[np.str_('Class_1')]
+            Cuad = resultados[np.str_('Class_1')]
+            Cir = resultados[np.str_('Class_2')]
 
             coorCuad = obtener_centro(Cuad)  
             coorCir = obtener_centro(Cir)    
@@ -87,8 +87,8 @@ if __name__ == "__main__":
             print("KNN")
             resultados = tk.ejecutar_knn_sin_pca(ruta)
             
-            Cuad = resultados[np.str_('Class_2')]
-            Cir = resultados[np.str_('Class_1')]
+            Cuad = resultados[np.str_('Class_1')]
+            Cir = resultados[np.str_('Class_2')]
 
             coorCuad = obtener_centro(Cuad)  
             coorCir = obtener_centro(Cir)    

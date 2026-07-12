@@ -11,8 +11,8 @@ Entrena el modelo con y sin PCA, y expone dos funciones que reciben la
 ruta de la imagen a evaluar y corren la detección por ventana deslizante.
 """
 
-from Entrenar_Naive_Bayes import cargar_y_describir_dataset, entrenar_modelo_final
-from Localizacion_Bayes import ejecutar_deteccion
+from src.model.Entrenar_Naive_Bayes import cargar_y_describir_dataset, entrenar_modelo_final
+from src.model.Localizacion_Bayes import ejecutar_deteccion
 
 
 # --- Ajusta esta ruta a tu proyecto ---

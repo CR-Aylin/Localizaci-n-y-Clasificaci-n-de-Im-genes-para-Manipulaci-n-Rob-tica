@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
-from NaiveBayes import NaiveBayes
-from Entrenar_Naive_Bayes import cargar_y_describir_dataset, entrenar_modelo_final
+from src.model.NaiveBayes import NaiveBayes
+from src.model.Entrenar_Naive_Bayes import cargar_y_describir_dataset, entrenar_modelo_final
 
 
 # Localización de Ventana Deslizante con Naive Bayes (3 clases: Circulo, Poligonos, Fondo)
