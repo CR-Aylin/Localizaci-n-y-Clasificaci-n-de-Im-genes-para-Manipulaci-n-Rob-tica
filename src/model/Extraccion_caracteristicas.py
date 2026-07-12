@@ -23,6 +23,69 @@ class features_extractor:
         # con la escala de las fotos de entrenamiento, sin importar la clase real.
         return 3 + 3 + 7 + (3 * self.hist_bins)
 
+    # nuevo: Método para extraer la imagen comprimida mediante PCA
+    def _extract_pca_pixels(self, image, mask, cnt):
+        """
+        Extrae una representación comprimida de la imagen del objeto usando PCA.
+        Esto permite incluir información visual espacial en el vector de características
+        manteniendo un tamaño fijo e invariante a la posición dentro de la ventana.
+        """
+        x, y, w, h = cv2.boundingRect(cnt)
+        
+        # Recortar la región del objeto usando el bounding box
+        roi = image[y:y+h, x:x+w]
+        roi_mask = mask[y:y+h, x:x+w]
+        
+        # Aplicar máscara para obtener solo los píxeles del objeto
+        masked_roi = cv2.bitwise_and(roi, roi, mask=roi_mask)
+        
+        # Convertir a escala de grises para PCA
+        if len(masked_roi.shape) == 3:
+            gray_roi = cv2.cvtColor(masked_roi, cv2.COLOR_BGR2GRAY)
+        else:
+            gray_roi = masked_roi
+        
+        # Obtener píxeles no nulos del objeto
+        pixels = gray_roi[roi_mask > 0]
+        
+        if len(pixels) < self.pca_components:
+            # Si hay muy pocos píxeles, retornar ceros
+            return np.zeros(self.pca_components)
+        
+        # Redimensionar a un tamaño fijo para consistencia
+        fixed_size = 32
+        resized = cv2.resize(gray_roi, (fixed_size, fixed_size), interpolation=cv2.INTER_AREA)
+        resized_mask = cv2.resize(roi_mask, (fixed_size, fixed_size), interpolation=cv2.INTER_NEAREST)
+        
+        # Aplicar máscara al redimensionado
+        resized_masked = cv2.bitwise_and(resized, resized, mask=resized_mask)
+        
+        # Aplanar y aplicar PCA
+        flat = resized_masked.flatten().astype(np.float32)
+        
+        # Centrar datos
+        mean_val = np.mean(flat[flat > 0]) if np.any(flat > 0) else 0
+        centered = flat - mean_val
+        
+        # Calcular componentes principales manualmente para evitar dependencia externa en extracción
+        cov = np.cov(centered.reshape(1, -1)) if len(centered) > 1 else np.array([[0]])
+        
+        if cov.size == 1:
+            return np.zeros(self.pca_components)
+            
+        try:
+            eigenvalues, eigenvectors = np.linalg.eigh(cov)
+            # Ordenar por valor propio descendente
+            idx = np.argsort(eigenvalues)[::-1]
+            eigenvectors = eigenvectors[:, idx[:self.pca_components]]
+            
+            # Proyectar datos
+            compressed = np.dot(centered, eigenvectors)
+            return compressed.flatten()
+        except:
+            return np.zeros(self.pca_components)
+    # nuevo fin
+
     def sliding_window(self, image, window_size=(100, 100), step_size=50):
         h, w = image.shape[:2]
         win_h, win_w = window_size
@@ -128,7 +191,16 @@ class features_extractor:
         # No aportan información de clase real (dependen de dónde cae la ventana
         # o la resolución de la foto) y solo confundían al clasificador. Si se
         # necesitan para dibujar o depurar, usa self.largo_ancho(image, cnt) aparte.
-        VECTOR = np.concatenate([geom_features, stat_features, visual_features])
+        #VECTOR = np.concatenate([geom_features, stat_features, visual_features])
+
+        # nuevo: Extraer imagen comprimida mediante PCA
+        pca_features = self._extract_pca_pixels(image, mask, cnt)
+        # nuevo fin
+
+        # Concatenar el VECTOR final incluyendo la imagen comprimida
+        # nuevo: Se añade pca_features al vector final
+        VECTOR = np.concatenate([geom_features, stat_features, visual_features, pca_features])
+        # nuevo fin
 
         if self.debug:
             self.largo_ancho(image, cnt)
