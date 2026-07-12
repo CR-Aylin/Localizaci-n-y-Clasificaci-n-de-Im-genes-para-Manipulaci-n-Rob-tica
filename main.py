@@ -121,9 +121,16 @@ if __name__ == "__main__":
             )
             #print(resultados)
 
-            Cuad,Cir = resultados
+            resultados_por_clase = {r["clase"]: r for r in resultados}
+            Cuad = resultados_por_clase.get("Class_1")
+            Cir = resultados_por_clase.get("Class_2")
+            
+            if Cuad is None or Cir is None:
+                raise ValueError("No se detectaron ambos objetos.")
+            
             coorCir = Cir["centro"]
-            coorCuad = Cuad['centro']
+            coorCuad = Cuad["centro"]
+
         case (2, False):
             print("NaivesBayes")
             X, y, extractor = nb.cargar_y_describir_dataset(ruta_dataset="dataset/Entrenamiento")
@@ -144,9 +151,16 @@ if __name__ == "__main__":
                 mostrar=True,
                 ruta_salida="salida/resultado_sin_pca.jpg"
             )
-            Cuad,Cir = resultados
+
+            resultados_por_clase = {r["clase"]: r for r in resultados}
+            Cuad = resultados_por_clase.get("Class_1")
+            Cir = resultados_por_clase.get("Class_2")
+            
+            if Cuad is None or Cir is None:
+                raise ValueError("No se detectaron ambos objetos (Cuadrado y Circulo).")
+            
             coorCir = Cir["centro"]
-            coorCuad = Cuad['centro']
+            coorCuad = Cuad["centro"]
             
         case (3, True):
             print("SVM - PCA")

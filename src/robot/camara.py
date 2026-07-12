@@ -339,8 +339,8 @@ class Cam:
 
         return None
     
-    
-    def probar():
+    # nuevo
+    def probar(self):
 
         cam = Cam()
 
