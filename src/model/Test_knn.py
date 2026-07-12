@@ -234,7 +234,7 @@ def ejecutar_knn_con_pca(RUTA_TABLERO):
         knn=res_con_pca['knn'],
         scaler=res_con_pca['scaler'],
         pca=res_con_pca['pca'],
-        extractor=extractor
+        extractor=extractor,
         dist_threshold=res_con_pca['dist_threshold']
     )
     
@@ -265,7 +265,7 @@ def ejecutar_knn_sin_pca(RUTA_TABLERO):
         knn=res_sin_pca['knn'],
         scaler=res_sin_pca['scaler'],
         pca=res_sin_pca['pca'],
-        extractor=extractor
+        extractor=extractor,
         dist_threshold=res_sin_pca['dist_threshold']
     )
     
@@ -306,6 +306,6 @@ if __name__ == "__main__":
         knn=mejor_modelo['knn'],
         scaler=mejor_modelo['scaler'],
         pca=mejor_modelo['pca'],
-        extractor=extractor
+        extractor=extractor,
         dist_threshold=mejor_modelo['dist_threshold']
     )
