@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 class features_extractor:
 
-    def __init__(self, hist_bins=16, debug=False, chroma_threshold=12):
+    def __init__(self, hist_bins=16, debug=False, chroma_threshold=12, pca_components=10):
         self.hist_bins = hist_bins
         self.debug = debug
         # Umbral de "chroma" (distancia al gris neutro en espacio LAB) para separar
@@ -14,6 +14,7 @@ class features_extractor:
         # (ej. el celeste claro del cubo), aunque el color siga siendo visible a simple
         # vista. LAB no tiene ese problema porque separa luminosidad (L) de color (a, b).
         self.chroma_threshold = chroma_threshold
+        self.pca_components = pca_components
 
     def get_feature_size(self):
         # 3 (geom, solo invariantes a escala) + 3 (stat) + 7 (hu) + (3 * hist_bins) (color)
@@ -21,7 +22,7 @@ class features_extractor:
         # vector: son valores absolutos en píxeles que dependen de la resolución/distancia
         # de la foto, y en la ventana deslizante (fija en 100x100) nunca van a coincidir
         # con la escala de las fotos de entrenamiento, sin importar la clase real.
-        return 3 + 3 + 7 + (3 * self.hist_bins)
+        return 3 + 3 + 7 + (3 * self.hist_bins) + self.pca_components
 
     # nuevo: Método para extraer la imagen comprimida mediante PCA
     def _extract_pca_pixels(self, image, mask, cnt):

@@ -170,9 +170,17 @@ if __name__ == "__main__":
                                 confidence_threshold=0.65,
                                 n_components=50
                             )
-            Cuad,Cir = resultados
+
+            resultados_por_clase = {r["class"]: r for r in resultados}
+            Cuad = resultados_por_clase.get("Class_1")
+            Cir = resultados_por_clase.get("Class_2")
+            
+            if Cuad is None or Cir is None:
+                raise ValueError("No se detectaron ambos objetos (Cuadrado y Circulo).")
+            
             coorCir = [Cir['x'], Cir['y']]
             coorCuad = [Cuad['x'], Cuad['y']]
+
         case (3, False):
             print("SVM")
             resultados = svm.ejecutar_deteccion(
@@ -180,7 +188,14 @@ if __name__ == "__main__":
                             ruta_imagen_tablero=ruta,
                             confidence_threshold=0.65
                         )
-            Cuad,Cir = resultados
+
+            resultados_por_clase = {r["class"]: r for r in resultados}
+            Cuad = resultados_por_clase.get("Class_1")
+            Cir = resultados_por_clase.get("Class_2")
+            
+            if Cuad is None or Cir is None:
+                raise ValueError("No se detectaron ambos objetos (Cuadrado y Circulo).")
+            
             coorCir = [Cir['x'], Cir['y']]
             coorCuad = [Cuad['x'], Cuad['y']]
 
