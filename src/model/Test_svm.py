@@ -6,6 +6,10 @@ import os
 import time
 from src.model.SVM import SVM, SVM_PCA, sliding_window_localization_svm
 from src.model import Extraccion_caracteristicas as ec
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def cargar_dataset(ruta_dataset):
@@ -75,6 +79,39 @@ def entrenar_svm(ruta_dataset, usar_pca=False, n_components=50):
 
     return model, X, y
 
+def evaluar_svm(X, y, usar_pca=False, n_components=50, test_size=0.2, random_state=42):
+    """
+    Evalúa el SVM con un split hold-out y muestra su matriz de confusión,
+    igual que se hace para KNN.
+    """
+    clases = sorted(np.unique(y))
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    if usar_pca:
+        modelo_eval = SVM_PCA(n_components=n_components, kernel='rbf', C=10.0, gamma='scale')
+    else:
+        modelo_eval = SVM(kernel='rbf', C=10.0, gamma='scale')
+
+    modelo_eval.fit(X_train, y_train)
+    predicciones = modelo_eval.predict(X_test)
+
+    accuracy = accuracy_score(y_test, predicciones)
+    print(f"\n{'='*60}")
+    print(f"  EVALUACIÓN SVM {'CON PCA' if usar_pca else 'SIN PCA'}")
+    print(f"{'='*60}")
+    print(f"Accuracy: {accuracy*100:.2f}%")
+    print(classification_report(y_test, predicciones, labels=clases, target_names=clases, zero_division=0))
+
+    cm = confusion_matrix(y_test, predicciones, labels=clases)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=clases, yticklabels=clases)
+    plt.title(f"Matriz Confusión SVM {'(PCA)' if usar_pca else '(Sin PCA)'}")
+    plt.xlabel("Predicción"); plt.ylabel("Real")
+    plt.tight_layout(); plt.show()
+
+    return accuracy
 
 def probar_svm_en_imagen(model, ruta_imagen, extractor, confidence_threshold=0.5,
                           window_size=(100, 100), step=20, mostrar_ventana=True):
@@ -196,6 +233,9 @@ def ejecutar_deteccion(
 
     # Se entrena con la CARPETA del dataset completo, no con una imagen suelta
     model_svm, X_train, y_train = entrenar_svm(ruta_dataset, usar_pca=usar_pca)
+
+    evaluar_svm(X_train, y_train, usar_pca=usar_pca)
+
     extractor = ec.features_extractor(hist_bins=hist_bins, debug=False)
 
     resultados = probar_svm_en_imagen(
@@ -247,6 +287,8 @@ def ejecutar_deteccion_PCA(
         usar_pca=True,
         n_components=n_components
     )
+
+    evaluar_svm(X_train, y_train, usar_pca=True, n_components=n_components)
 
     extractor = ec.features_extractor(
         hist_bins=hist_bins,

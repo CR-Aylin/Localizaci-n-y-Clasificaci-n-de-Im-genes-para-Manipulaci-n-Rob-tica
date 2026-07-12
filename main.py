@@ -5,6 +5,8 @@ from pydobot import Dobot
 import serial.tools.list_ports as list_ports 
 import time # time.sleep(3)  # Espera 3 segundos
 import os
+import glob
+import random
 
 
 import src.model.ArchivoEtiquetas as Arch
@@ -29,6 +31,23 @@ def obtener_centro(datos_clase):
     (x1, y1), (x2, y2) = datos_clase['coordenadas_cuadrado']
     return ((x1 + x2) // 2, (y1 + y2) // 2)
 
+def elegir_imagen_test(carpeta_test=r"dataset/Test"):
+    """
+    Elige al azar una imagen de la carpeta de pruebas para usarla como
+    entrada del modelo elegido. Descarta imágenes que ya son el resultado
+    de una detección previa (para no volver a analizar una salida).
+    """
+    patrones = ("*.jpg", "*.jpeg", "*.png")
+    candidatas = []
+    for patron in patrones:
+        candidatas.extend(glob.glob(os.path.join(carpeta_test, patron)))
+
+    candidatas = [c for c in candidatas if "deteccion" not in os.path.basename(c).lower()]
+
+    if not candidatas:
+        raise FileNotFoundError(f"No se encontraron imágenes de prueba en '{carpeta_test}'.")
+
+    return random.choice(candidatas)
 
 def Ejemplo(ROBOTS, offsetx, offsety):
     
@@ -69,8 +88,14 @@ if __name__ == "__main__":
     """ 
     ruta_dataset=r"dataset/Entrenamiento"
 
+    ruta = elegir_imagen_test(r"dataset/Test")
+    print(f"Imagen de prueba seleccionada al azar: {ruta}")
+
     modelo = int(input("Seleccione Modelo: "))
     redu = bool(int(input("Reducción Dimensional (1/0): "))) #boleano 
+
+    coorCuad = None
+    coorCir = None
 
     match (modelo, redu):
         case (1, True):
@@ -201,6 +226,16 @@ if __name__ == "__main__":
 
         case _:
             print("Combinación no válida")
+
+    print("\n" + "=" * 60)
+    print(f"IMAGEN ANALIZADA: {ruta}")
+    if coorCuad is not None and coorCir is not None:
+        print("POSICIÓN DETECTADA (en píxeles)")
+        print(f"Cuadrado = {coorCuad}")
+        print(f"Circulo = {coorCir}")
+    else:
+        print("No se obtuvo una posición válida (combinación no válida o sin detección).")
+    print("=" * 60)
 
 #print(f"Coordenadas Circulo = {coorCir}")
 #print(f"Coordenadas Cuadrado = {coorCuad}")

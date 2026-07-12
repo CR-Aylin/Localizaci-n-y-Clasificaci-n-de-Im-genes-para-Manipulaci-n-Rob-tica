@@ -5,6 +5,9 @@ from collections import Counter
 import cv2
 import numpy as np
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from src.model.Extractor_Seguro_Bayes import ExtractorSeguro
 from src.model.NaiveBayes import NaiveBayes
 from src.model.PCA_Bayes import PCA
@@ -190,6 +193,12 @@ def evaluar_holdout(X, y, test_size=0.2, usar_pca=False, varianza_objetivo=0.95)
 
     imprimir_matriz_confusion(M, clases)
     imprimir_metricas(metricas)
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(M, annot=True, fmt='d', cmap='Blues', xticklabels=clases, yticklabels=clases)
+    plt.title(f"Matriz Confusión Naive Bayes {'(PCA)' if usar_pca else '(Sin PCA)'}")
+    plt.xlabel("Predicción"); plt.ylabel("Real")
+    plt.tight_layout(); plt.show()
 
     return exactitud, metricas, t_entrenamiento, t_inferencia_total
 

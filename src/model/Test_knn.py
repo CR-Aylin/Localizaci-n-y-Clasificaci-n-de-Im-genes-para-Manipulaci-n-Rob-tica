@@ -45,6 +45,11 @@ def cargar_dataset(ruta_base, extractor):
     
     return np.array(X), np.array(y), sorted(list(set(y)))
 
+def calcular_dist_threshold(X_ref, model, percentil=95, factor=1.5):
+    distancias = [model.predict_with_distance(x)[1] for x in X_ref]
+    base = np.percentile(distancias, percentil)
+    return base * factor
+
 # ============================================================
 # 2. FUNCIÓN DE EVALUACIÓN (MÉTRICAS)
 # ============================================================
@@ -95,6 +100,9 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases,
     plt.xlabel("Predicción"); plt.ylabel("Real")
     plt.tight_layout(); plt.show()
     
+    dist_threshold = calcular_dist_threshold(X_train_scaled, knn)
+    print(f"Umbral de distancia calibrado: {dist_threshold:.4f}")
+
     # --- GUARDAR MODELOS ---
     if guardar_modelos:
         os.makedirs(ruta_guardado, exist_ok=True)
@@ -105,12 +113,12 @@ def evaluar_knn(X_train, y_train, X_test, y_test, clases,
             joblib.dump(pca, os.path.join(ruta_guardado, f"pca_{sufijo}.pkl"))
         print(f"Modelos guardados en: {ruta_guardado}/")
     
-    return {'knn': knn, 'scaler': scaler, 'pca': pca, 'accuracy': accuracy, 'f1': f1_macro}
+    return {'knn': knn, 'scaler': scaler, 'pca': pca, 'accuracy': accuracy, 'f1': f1_macro, 'dist_threshold': dist_threshold}
 
 # ============================================================
 # 3. FUNCIÓN DE PRUEBA VISUAL EN TABLERO
 # ============================================================
-def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100, 100)):
+def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100, 100), dist_threshold=10):
     """
     Aplica la ventana deslizante, agrupa detecciones por clase y retorna el bounding box por clase.
     """
@@ -118,7 +126,7 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
     img = cv2.imread(ruta_imagen)
     if img is None:
         print("Error al cargar la imagen.")
-        return {} # nuevo: Retornar diccionario vacío si hay error
+        return {}
 
     detections_raw = sliding_window_localization(
         board_image=img,
@@ -128,12 +136,11 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
         pca=pca,
         window_size=window_size,
         step=20,
-        dist_threshold=10
+        dist_threshold=dist_threshold
     )
     
     print(f"--- Resultados de Detección ({len(detections_raw)} objetos encontrados) ---")
     
-    # nuevo: Diccionario para agrupar detecciones por clase
     detecciones_por_clase = {}
     
     if not detections_raw:
@@ -146,7 +153,6 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
             
             print(f"  Deteccion #{i+1}: Clase='{label}' | Coordenadas(x,y)=({x}, {y}) | Confianza={conf:.4f}")
             
-            # nuevo: Agrupar coordenadas por clase
             if label not in detecciones_por_clase:
                 detecciones_por_clase[label] = []
             detecciones_por_clase[label].append((x, y))
@@ -155,13 +161,12 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
 
     # Dibujar resultados (Visualización)
     img_result = img.copy()
-    resultados_retorno = {} # nuevo: Para retornar bounding boxes por clase
+    resultados_retorno = {} 
 
     for label, puntos in detecciones_por_clase.items():
         if not puntos:
             continue
         
-        # nuevo: Calcular Bounding Box que englobe todos los puntos de esta clase
         xs = [p[0] for p in puntos]
         ys = [p[1] for p in puntos]
         min_x, max_x = min(xs), max(xs)
@@ -195,15 +200,12 @@ def probar_en_tablero(ruta_imagen, knn, scaler, pca, extractor, window_size=(100
     plt.title(f"Detecciones Agrupadas por Clase")
     plt.axis('off')
     plt.show()
-    
-    
-    # nuevo: Imprimir resumen de cuadrados generados
 
+    # nuevo: Imprimir resumen de cuadrados generados
     print("\n=== CUADRADOS GENERADOS POR CLASE ===")
     for label, info in resultados_retorno.items():
         coords = info['coordenadas_cuadrado']
         print(f"Clase: {label} | Cuadrado: TopLeft{coords[0]} - BottomRight{coords[1]}")
-
 
     return resultados_retorno 
 
@@ -227,16 +229,15 @@ def ejecutar_knn_con_pca(RUTA_TABLERO):
     
     res_con_pca = evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=True, n_components=N_COMPONENTES_PCA, k=K_VECINOS, guardar_modelos=True)
     
-    # nuevo: Capturar el retorno de probar_en_tablero
     detecciones_agrupadas = probar_en_tablero(
         ruta_imagen=RUTA_TABLERO,
         knn=res_con_pca['knn'],
         scaler=res_con_pca['scaler'],
         pca=res_con_pca['pca'],
         extractor=extractor
+        dist_threshold=res_con_pca['dist_threshold']
     )
     
-    # nuevo: Retornar las detecciones agrupadas
     return detecciones_agrupadas
 
 def ejecutar_knn_sin_pca(RUTA_TABLERO):
@@ -259,16 +260,15 @@ def ejecutar_knn_sin_pca(RUTA_TABLERO):
     
     res_sin_pca = evaluar_knn(X_train, y_train, X_test, y_test, clases, usar_pca=False, k=K_VECINOS, guardar_modelos=True)
 
-    # nuevo: Capturar el retorno de probar_en_tablero
     detecciones_agrupadas = probar_en_tablero(
         ruta_imagen=RUTA_TABLERO,
         knn=res_sin_pca['knn'],
         scaler=res_sin_pca['scaler'],
         pca=res_sin_pca['pca'],
         extractor=extractor
+        dist_threshold=res_sin_pca['dist_threshold']
     )
     
-    # nuevo: Retornar las detecciones agrupadas
     return detecciones_agrupadas
 
 # ============================================================
@@ -301,11 +301,11 @@ if __name__ == "__main__":
     
     print(f"\nUsando modelo {tipo_modelo} para la prueba visual (Accuracy: {mejor_modelo['accuracy']*100:.2f}%)")
     
-    # nuevo: Capturar resultados finales
     resultados_finales = probar_en_tablero(
         ruta_imagen=RUTA_TABLERO,
         knn=mejor_modelo['knn'],
         scaler=mejor_modelo['scaler'],
         pca=mejor_modelo['pca'],
         extractor=extractor
+        dist_threshold=mejor_modelo['dist_threshold']
     )
