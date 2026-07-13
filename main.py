@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     ruta = resultados['ruta'] #'ruta': 'dataset\\Pruebas\\Prueba1.png'
 
-    """ 
+    
     ruta_dataset=r"dataset/Entrenamiento"
 
     ruta = elegir_imagen_test(r"dataset/Test")
@@ -226,6 +226,7 @@ if __name__ == "__main__":
 
         case _:
             print("Combinación no válida")
+<<<<<<< Updated upstream
 
     print("\n" + "=" * 60)
     print(f"IMAGEN ANALIZADA: {ruta}")
@@ -237,7 +238,10 @@ if __name__ == "__main__":
         print("No se obtuvo una posición válida (combinación no válida o sin detección).")
     print("=" * 60)
 
+=======
+""" 
+>>>>>>> Stashed changes
 #print(f"Coordenadas Circulo = {coorCir}")
 #print(f"Coordenadas Cuadrado = {coorCuad}")
 #una vez identificado el objeto , mover robot , coordenaa1 == objetos a mover ; coordenada 2 == donde dejar el objeto
-##dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
+dm.mover_robot(ROBOTS,Cordenaa1,Cordenaa2)
