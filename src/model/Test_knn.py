@@ -269,6 +269,8 @@ def ejecutar_knn_sin_pca(RUTA_TABLERO):
         dist_threshold=res_sin_pca['dist_threshold']
     )
     
+    print(detecciones_agrupadas)
+    
     return detecciones_agrupadas
 
 # ============================================================
