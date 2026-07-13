@@ -27,6 +27,8 @@ def calcular_centro(x, y, ancho, alto):
 def conectar():
     puertos = list(list_ports.comports())
     
+    puertos.sort()
+    
     if len(puertos) == 0:
         raise Exception("No se encontró ningún puerto serie.")
     
@@ -58,9 +60,14 @@ def pixeles_a_mm(pix_x, pix_y, offsetx = 0, offsety = 0):
     mm_x = pix_x * ESCALA_X + offsetx
     mm_y = pix_y * ESCALA_Y + offsety
     return mm_x, mm_y
-
-def mover_robot(robot,Cordenaa1, Cordenaa2):
-
+#                      Cordenaa1, Cordenaa2
+def mover_robot(robot, Cordenaa1, Cordenaa2):
+    HOME_X = 250
+    HOME_Y = 50
+    HOME_Z = 60
+    HOME_R = 1
+    
+    robot.move_to(HOME_X, HOME_Y, HOME_Z, HOME_R, wait=True)
     # Obtener posición actual
     pose = robot.pose()
     print(f"Posición actual: {pose}")
@@ -72,16 +79,16 @@ def mover_robot(robot,Cordenaa1, Cordenaa2):
 
     #print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
 
-
-    robot.move_to(Cordenaa1[0],Cordenaa1[1],Velocidad,Aceleracion, wait=True)
+#                 Cordenaa1[0], Cordenaa2[1]
+    robot.move_to(Cordenaa1[0], Cordenaa1[1],Velocidad,Aceleracion, wait=True)
 
     #Cerrar pinza
     robot.grip(False)
     robot.suck(False)
-    time.sleep(1)
-    robot.move_to(Cordenaa1[0],Cordenaa1[1],40,Velocidad,Aceleracion, wait=True)
-    robot.move_to(Cordenaa2[0],Cordenaa2[1],Velocidad,Aceleracion, wait=True)
-"""
+    time.sleep(1)#Cordenaa1[0], Cordenaa2[1]
+    robot.move_to(Cordenaa1[0], Cordenaa1[1],40,Velocidad,Aceleracion, wait=True)
+    robot.move_to(Cordenaa2[0], Cordenaa2[1],Velocidad,Aceleracion, wait=True)
+
 if __name__ == "__main__":
 
     # Conectar robot
@@ -95,10 +102,11 @@ if __name__ == "__main__":
     print(f"Posición actual: {pose}")
 
     # Calcular coordenadas
-    base_pos_x, base_pos_y = pixeles_a_mm(1920, 1080)
-    print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
+    #base_pos_x, base_pos_y = pixeles_a_mm(1920, 1080)
+    #print(f"Coordenadas base: X={base_pos_x}, Y={base_pos_y}")
 
     # Mover robot (descomentar cuando estés listo)
-    #ROBOTS.move_to(base_pos_x, base_pos_y,Velocidad,Aceleracion, wait=True)
-"""
+    #
+    # ROBOTS.move_to(base_pos_x, base_pos_y,Velocidad,Aceleracion, wait=True)
+
     
