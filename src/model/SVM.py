@@ -126,7 +126,8 @@ def sliding_window_localization_svm(
         extractor,
         window_size=(100, 100),
         step=20,
-        confidence_threshold=0.5):
+        confidence_threshold=0.0,
+        relative_factor=0.4):
 
     h, w = board_image.shape[:2]
 
@@ -141,11 +142,6 @@ def sliding_window_localization_svm(
                 x:x + window_size[0]
             ]
 
-            # return_bbox=True: además del vector de features (que ya NO incluye
-            # posición/tamaño crudos, para no confundir al clasificador), obtenemos
-            # el bounding box real del objeto DENTRO de la ventana, para poder
-            # dibujar un rectángulo ajustado a la forma en vez de un cuadrado fijo
-            # de 100x100 centrado a ciegas.
             features, bbox_local = extractor.extract(window, return_bbox=True)
 
             features = np.asarray(features, dtype=np.float32)
@@ -174,6 +170,18 @@ def sliding_window_localization_svm(
                     "class": label,
                     "confidence": confidence
                 })
+
+    if detections:
+        confianza_max_por_clase = {}
+        for det in detections:
+            c = det["class"]
+            if c not in confianza_max_por_clase or det["confidence"] > confianza_max_por_clase[c]:
+                confianza_max_por_clase[c] = det["confidence"]
+
+        detections = [
+            det for det in detections
+            if det["confidence"] >= confianza_max_por_clase[det["class"]] * relative_factor
+        ]
 
     detections.sort(
         key=lambda d: d["confidence"],

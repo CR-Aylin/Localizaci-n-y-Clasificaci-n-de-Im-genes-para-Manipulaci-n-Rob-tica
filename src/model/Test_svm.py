@@ -241,8 +241,8 @@ def ejecutar_deteccion(
 
     evaluar_svm(X_train, y_train, usar_pca=usar_pca)
 
-    confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
-    print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
+    #confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
+    #print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
 
     extractor = ec.features_extractor(hist_bins=hist_bins, debug=False)
 
@@ -250,7 +250,7 @@ def ejecutar_deteccion(
         model_svm,
         ruta_imagen_tablero,
         extractor,
-        confidence_threshold=confidence_threshold,
+        confidence_threshold=0.05,
         window_size=window_size,
         step=step,
         mostrar_ventana=mostrar_ventana
@@ -298,8 +298,8 @@ def ejecutar_deteccion_PCA(
 
     evaluar_svm(X_train, y_train, usar_pca=True, n_components=n_components)
 
-    confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
-    print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
+    #confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
+    #print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
 
     extractor = ec.features_extractor(
         hist_bins=hist_bins,
@@ -310,7 +310,7 @@ def ejecutar_deteccion_PCA(
         model=model_svm,
         ruta_imagen=ruta_imagen_tablero,
         extractor=extractor,
-        confidence_threshold=confidence_threshold_calibrado,
+        confidence_threshold=0.05,
         window_size=window_size,
         step=step,
         mostrar_ventana=mostrar_ventana
