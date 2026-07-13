@@ -79,6 +79,11 @@ def entrenar_svm(ruta_dataset, usar_pca=False, n_components=50):
 
     return model, X, y
 
+def calcular_confidence_threshold(X_ref, model, percentil=5, factor=0.5):
+    confidencias = [model.predict_with_distance(x)[1] for x in X_ref]
+    base = np.percentile(confidencias, percentil)
+    return base * factor
+
 def evaluar_svm(X, y, usar_pca=False, n_components=50, test_size=0.2, random_state=42):
     """
     Evalúa el SVM con un split hold-out y muestra su matriz de confusión,
@@ -236,6 +241,9 @@ def ejecutar_deteccion(
 
     evaluar_svm(X_train, y_train, usar_pca=usar_pca)
 
+    confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
+    print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
+
     extractor = ec.features_extractor(hist_bins=hist_bins, debug=False)
 
     resultados = probar_svm_en_imagen(
@@ -290,6 +298,9 @@ def ejecutar_deteccion_PCA(
 
     evaluar_svm(X_train, y_train, usar_pca=True, n_components=n_components)
 
+    confidence_threshold_calibrado = calcular_confidence_threshold(X_train, model_svm)
+    print(f"Umbral de confianza calibrado: {confidence_threshold_calibrado:.4f} "f"(se ignora el valor fijo recibido: {confidence_threshold})")
+
     extractor = ec.features_extractor(
         hist_bins=hist_bins,
         debug=False
@@ -299,7 +310,7 @@ def ejecutar_deteccion_PCA(
         model=model_svm,
         ruta_imagen=ruta_imagen_tablero,
         extractor=extractor,
-        confidence_threshold=confidence_threshold,
+        confidence_threshold=confidence_threshold_calibrado,
         window_size=window_size,
         step=step,
         mostrar_ventana=mostrar_ventana
